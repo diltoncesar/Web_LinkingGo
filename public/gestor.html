@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LinkingGo — Acesso Gestor</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --blue:       #2563EB;
+      --blue-dark:  #1D4ED8;
+      --blue-light: #EFF6FF;
+      --gray-900:   #0F172A;
+      --gray-800:   #1E293B;
+      --gray-700:   #334155;
+      --gray-500:   #64748B;
+      --gray-300:   #CBD5E1;
+      --gray-100:   #F1F5F9;
+      --white:      #FFFFFF;
+      --red:        #EF4444;
+    }
+    html { font-size: 16px; height: 100%; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(135deg, #0F172A 0%, #1E3A5F 100%);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    /* ── Card ── */
+    .card {
+      background: var(--white);
+      border-radius: 20px;
+      padding: 48px 40px 40px;
+      width: 100%;
+      max-width: 420px;
+      box-shadow: 0 32px 80px rgba(0,0,0,.35);
+      animation: fadeUp .4s ease both;
+    }
+    @keyframes fadeUp {
+      from { opacity:0; transform: translateY(20px); }
+      to   { opacity:1; transform: translateY(0); }
+    }
+
+    /* ── Logo area ── */
+    .logo-area {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+    .logo-area img {
+      height: 44px;
+      margin: 0 auto 12px;
+    }
+    .logo-area h1 {
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: var(--gray-900);
+    }
+    .logo-area p {
+      font-size: .875rem;
+      color: var(--gray-500);
+      margin-top: 4px;
+    }
+
+    /* ── Form ── */
+    .form-group {
+      margin-bottom: 18px;
+    }
+    label {
+      display: block;
+      font-size: .825rem;
+      font-weight: 600;
+      color: var(--gray-700);
+      margin-bottom: 6px;
+    }
+    input[type="email"],
+    input[type="password"],
+    input[type="text"] {
+      width: 100%;
+      padding: 12px 16px;
+      border: 1.5px solid var(--gray-300);
+      border-radius: 10px;
+      font-size: .9375rem;
+      font-family: 'Inter', sans-serif;
+      color: var(--gray-900);
+      transition: border-color .2s;
+      outline: none;
+      background: var(--gray-100);
+    }
+    input:focus { border-color: var(--blue); background: var(--white); }
+
+    /* ── Button ── */
+    .btn-full {
+      display: block;
+      width: 100%;
+      padding: 14px;
+      background: var(--blue);
+      color: var(--white);
+      border: none;
+      border-radius: 10px;
+      font-size: 1rem;
+      font-weight: 700;
+      font-family: 'Inter', sans-serif;
+      cursor: pointer;
+      transition: background .2s, transform .15s;
+      margin-top: 8px;
+    }
+    .btn-full:hover { background: var(--blue-dark); transform: translateY(-1px); }
+    .btn-full:disabled { background: var(--gray-300); cursor: not-allowed; transform: none; }
+
+    /* ── Links ── */
+    .form-footer {
+      text-align: center;
+      margin-top: 24px;
+      font-size: .825rem;
+      color: var(--gray-500);
+    }
+    .form-footer a { color: var(--blue); font-weight: 600; }
+
+    /* ── Error / Success ── */
+    .alert {
+      padding: 12px 16px;
+      border-radius: 8px;
+      font-size: .85rem;
+      font-weight: 500;
+      margin-bottom: 18px;
+      display: none;
+    }
+    .alert.error   { background: #FEF2F2; color: var(--red);   border: 1px solid #FECACA; }
+    .alert.success { background: #F0FDF4; color: #16A34A; border: 1px solid #BBF7D0; }
+    .alert.visible { display: block; }
+
+    /* ── Divider ── */
+    .divider {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 22px 0;
+      color: var(--gray-300);
+      font-size: .8rem;
+    }
+    .divider::before, .divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--gray-300);
+    }
+
+    /* ── Tabs ── */
+    .tabs {
+      display: flex;
+      border-radius: 10px;
+      overflow: hidden;
+      border: 1.5px solid var(--gray-300);
+      margin-bottom: 28px;
+    }
+    .tab {
+      flex: 1;
+      padding: 10px;
+      text-align: center;
+      font-size: .85rem;
+      font-weight: 600;
+      cursor: pointer;
+      color: var(--gray-500);
+      background: var(--gray-100);
+      transition: all .2s;
+      border: none;
+      font-family: 'Inter', sans-serif;
+    }
+    .tab.active {
+      background: var(--blue);
+      color: var(--white);
+    }
+
+    /* ── Back link ── */
+    .back-link {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      color: rgba(255,255,255,.7);
+      font-size: .875rem;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: color .2s;
+    }
+    .back-link:hover { color: var(--white); }
+  </style>
+</head>
+<body>
+
+<a href="index.html" class="back-link">
+  ← Voltar ao site
+</a>
+
+<div class="card">
+  <div class="logo-area">
+    <img src="assets/img/logo.png" alt="LinkingGo" />
+    <h1>Área do Gestor</h1>
+    <p>Gerencie sua frota em tempo real</p>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab active" onclick="showTab('login')">Entrar</button>
+    <button class="tab" onclick="showTab('register')">Criar Conta</button>
+  </div>
+
+  <!-- Alert -->
+  <div id="alert" class="alert"></div>
+
+  <!-- ── Login Form ── -->
+  <form id="login-form" onsubmit="handleLogin(event)">
+    <div class="form-group">
+      <label for="login-email">E-mail</label>
+      <input type="email" id="login-email" placeholder="empresa@email.com" required />
+    </div>
+    <div class="form-group">
+      <label for="login-password">Senha</label>
+      <input type="password" id="login-password" placeholder="••••••••" required />
+    </div>
+    <button type="submit" class="btn-full" id="login-btn">Entrar no Dashboard</button>
+  </form>
+
+  <!-- ── Register Form ── -->
+  <form id="register-form" style="display:none" onsubmit="handleRegister(event)">
+    <div class="form-group">
+      <label for="reg-name">Nome completo</label>
+      <input type="text" id="reg-name" placeholder="Seu nome" required />
+    </div>
+    <div class="form-group">
+      <label for="reg-company">Empresa</label>
+      <input type="text" id="reg-company" placeholder="Nome da transportadora" required />
+    </div>
+    <div class="form-group">
+      <label for="reg-email">E-mail corporativo</label>
+      <input type="email" id="reg-email" placeholder="voce@empresa.com" required />
+    </div>
+    <div class="form-group">
+      <label for="reg-password">Senha (mín. 6 caracteres)</label>
+      <input type="password" id="reg-password" placeholder="••••••••" minlength="6" required />
+    </div>
+    <button type="submit" class="btn-full" id="register-btn">Criar Conta</button>
+  </form>
+
+  <div class="form-footer" id="login-footer">
+    <a href="#" onclick="resetPassword()">Esqueceu a senha?</a>
+  </div>
+  <div class="form-footer" id="register-footer" style="display:none">
+    Ao criar conta você concorda com os <a href="#">Termos de Uso</a>
+  </div>
+</div>
+
+<!-- Firebase SDK -->
+<script type="module">
+  import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+  import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword,
+           sendPasswordResetEmail, onAuthStateChanged }
+    from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+  import { getFirestore, doc, setDoc, getDoc, serverTimestamp }
+    from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+  const firebaseConfig = {
+    apiKey:            'AIzaSyDnStmxzdXdzIwwqzhiB1tPHOdACOd7MeE',
+    authDomain:        'linkinggo.firebaseapp.com',
+    projectId:         'linkinggo',
+    storageBucket:     'linkinggo.firebasestorage.app',
+    messagingSenderId: '132678928883',
+  };
+
+  const app  = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db   = getFirestore(app);
+
+  // ── Redirect if already logged in ──────────────────────────
+  onAuthStateChanged(auth, async user => {
+    if (user) {
+      const snap = await getDoc(doc(db, 'users', user.uid));
+      if (snap.exists() && snap.data().role === 'manager') {
+        window.location.href = 'dashboard.html';
+      }
+    }
+  });
+
+  // ── Tab switching ──────────────────────────────────────────
+  window.showTab = function(tab) {
+    const isLogin = tab === 'login';
+    document.getElementById('login-form').style.display     = isLogin ? 'block' : 'none';
+    document.getElementById('register-form').style.display  = isLogin ? 'none'  : 'block';
+    document.getElementById('login-footer').style.display   = isLogin ? 'block' : 'none';
+    document.getElementById('register-footer').style.display = isLogin ? 'none' : 'block';
+    document.querySelectorAll('.tab').forEach((t, i) => {
+      t.classList.toggle('active', (i === 0) === isLogin);
+    });
+    clearAlert();
+  };
+
+  function showAlert(msg, type = 'error') {
+    const el = document.getElementById('alert');
+    el.textContent = msg;
+    el.className   = `alert ${type} visible`;
+  }
+  function clearAlert() {
+    document.getElementById('alert').className = 'alert';
+  }
+
+  // ── Login ──────────────────────────────────────────────────
+  window.handleLogin = async function(e) {
+    e.preventDefault();
+    clearAlert();
+    const btn   = document.getElementById('login-btn');
+    const email = document.getElementById('login-email').value.trim();
+    const pass  = document.getElementById('login-password').value;
+    btn.disabled = true;
+    btn.textContent = 'Entrando...';
+    try {
+      const cred = await signInWithEmailAndPassword(auth, email, pass);
+      const snap = await getDoc(doc(db, 'users', cred.user.uid));
+      if (!snap.exists() || snap.data().role !== 'manager') {
+        await auth.signOut();
+        showAlert('Acesso negado. Esta conta não é de gestor.');
+        btn.disabled = false;
+        btn.textContent = 'Entrar no Dashboard';
+        return;
+      }
+      window.location.href = 'dashboard.html';
+    } catch (err) {
+      const msgs = {
+        'auth/user-not-found':    'E-mail não encontrado.',
+        'auth/wrong-password':    'Senha incorreta.',
+        'auth/invalid-credential':'E-mail ou senha incorretos.',
+        'auth/too-many-requests': 'Muitas tentativas. Aguarde e tente novamente.',
+      };
+      showAlert(msgs[err.code] || 'Erro ao entrar. Tente novamente.');
+      btn.disabled = false;
+      btn.textContent = 'Entrar no Dashboard';
+    }
+  };
+
+  // ── Register ───────────────────────────────────────────────
+  window.handleRegister = async function(e) {
+    e.preventDefault();
+    clearAlert();
+    const btn         = document.getElementById('register-btn');
+    const name        = document.getElementById('reg-name').value.trim();
+    const companyName = document.getElementById('reg-company').value.trim();
+    const email       = document.getElementById('reg-email').value.trim();
+    const pass        = document.getElementById('reg-password').value;
+    btn.disabled = true;
+    btn.textContent = 'Criando conta...';
+    try {
+      const cred = await createUserWithEmailAndPassword(auth, email, pass);
+      const uid  = cred.user.uid;
+
+      // Create company document
+      const companyId = uid; // use uid as company ID for simplicity
+      await setDoc(doc(db, 'companies', companyId), {
+        name:          companyName,
+        managerUid:    uid,
+        managerEmail:  email,
+        plan:          'starter',
+        active:        true,
+        createdAt:     serverTimestamp(),
+      });
+
+      // Create user document
+      await setDoc(doc(db, 'users', uid), {
+        name:           name,
+        email:          email,
+        role:           'manager',
+        managedCompany: companyId,
+        createdAt:      serverTimestamp(),
+      });
+
+      window.location.href = 'dashboard.html';
+    } catch (err) {
+      const msgs = {
+        'auth/email-already-in-use': 'E-mail já cadastrado. Faça login.',
+        'auth/weak-password':        'Senha fraca. Use no mínimo 6 caracteres.',
+        'auth/invalid-email':        'E-mail inválido.',
+      };
+      showAlert(msgs[err.code] || 'Erro ao criar conta.');
+      btn.disabled = false;
+      btn.textContent = 'Criar Conta';
+    }
+  };
+
+  // ── Reset Password ─────────────────────────────────────────
+  window.resetPassword = async function() {
+    const email = document.getElementById('login-email').value.trim();
+    if (!email) {
+      showAlert('Digite seu e-mail acima primeiro.');
+      return;
+    }
+    try {
+      await sendPasswordResetEmail(auth, email);
+      showAlert('E-mail de redefinição enviado! Verifique sua caixa de entrada.', 'success');
+    } catch {
+      showAlert('Erro ao enviar e-mail. Verifique o endereço.');
+    }
+  };
+</script>
+
+</body>
+</html>

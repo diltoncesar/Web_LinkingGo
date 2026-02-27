@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="LinkingGo — Plataforma de gestão de entregas para empresas. Roteirização inteligente, app para motoristas e integração com seu sistema via API." />
+  <title>LinkingGo — Gestão de Entregas Inteligente</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="assets/css/style.css" />
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════════════
+     NAVBAR
+══════════════════════════════════════════════════════════ -->
+<nav id="navbar">
+  <div class="container nav-inner">
+    <a href="#">
+      <img src="assets/img/logo.png" alt="LinkingGo" class="nav-logo" />
+    </a>
+
+    <ul class="nav-links">
+      <li><a href="#como-funciona">Como Funciona</a></li>
+      <li><a href="#funcionalidades">Funcionalidades</a></li>
+      <li><a href="#integracao">Integração</a></li>
+      <li><a href="#precos">Preços</a></li>
+      <li><a href="#contato">Contato</a></li>
+    </ul>
+
+    <div class="nav-cta">
+      <a href="gestor.html" class="btn btn-gestor">Gestor</a>
+      <a href="#contato" class="btn btn-outline">Falar com Vendas</a>
+      <a href="#precos"  class="btn btn-primary">Ver Planos</a>
+    </div>
+
+    <button class="nav-toggle" aria-label="Menu">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</nav>
+
+
+<!-- ══════════════════════════════════════════════════════════
+     HERO
+══════════════════════════════════════════════════════════ -->
+<section id="hero">
+  <div class="container">
+    <div class="hero-inner">
+
+      <!-- Left -->
+      <div class="hero-content">
+        <div class="hero-badge">
+          <span></span> Plataforma em operação
+        </div>
+        <h1 class="hero-title">
+          Gestão de entregas <em>inteligente</em> para sua empresa
+        </h1>
+        <p class="hero-sub">
+          Do despacho à confirmação de entrega — tudo em tempo real.
+          Roteirização automática, app nativo para motoristas e integração
+          direta com o seu sistema.
+        </p>
+        <div class="hero-actions">
+          <a href="#contato" class="btn btn-white">Solicitar Demonstração</a>
+          <a href="#como-funciona" class="btn btn-ghost">Como funciona</a>
+        </div>
+        <div class="hero-stats">
+          <div class="stat-item">
+            <div class="stat-number">100%</div>
+            <div class="stat-label">Android nativo</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-number">Real‑time</div>
+            <div class="stat-label">Atualização via Firebase</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-number">API</div>
+            <div class="stat-label">Integração com seu ERP</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right — real app screenshot -->
+      <div class="hero-visual">
+        <div style="position:relative;">
+          <div class="phone-mockup">
+            <img
+              src="assets/img/routescreen.jpeg"
+              alt="LinkingGo — Tela de Rotas"
+              style="width:100%;border-radius:28px;display:block;"
+            />
+          </div>
+
+          <div class="floating-card card-1">
+            <span class="fc-icon">📍</span>
+            <div>
+              <div>Rota otimizada</div>
+              <div class="fc-label">70 paradas no mapa</div>
+            </div>
+          </div>
+
+          <div class="floating-card card-2">
+            <span class="fc-icon">✅</span>
+            <div>
+              <div>Entrega confirmada</div>
+              <div class="fc-label">Foto registrada</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════════════════════════
+     COMO FUNCIONA
+══════════════════════════════════════════════════════════ -->
+<section id="como-funciona">
+  <div class="container">
+    <div class="fade-up">
+      <span class="section-tag">Simples assim</span>
+      <h2 class="section-title">Em 3 passos você já está operando</h2>
+    </div>
+
+    <div class="steps-grid">
+
+      <div class="step-card fade-up" style="position:relative;">
+        <div class="step-num">1</div>
+        <div class="step-icon">🏢</div>
+        <h3 class="step-title">Sua empresa cadastra as rotas</h3>
+        <p class="step-text">Importe uma lista CSV, integre via API com seu sistema ou adicione endereços manualmente. Tudo em segundos.</p>
+        <span class="steps-connector">→</span>
+      </div>
+
+      <div class="step-card fade-up" style="position:relative;">
+        <div class="step-num">2</div>
+        <div class="step-icon">📱</div>
+        <h3 class="step-title">O motorista recebe no app</h3>
+        <p class="step-text">A rota aparece automaticamente no app Android do motorista, já otimizada pelo menor caminho com Google Maps.</p>
+        <span class="steps-connector">→</span>
+      </div>
+
+      <div class="step-card fade-up">
+        <div class="step-num">3</div>
+        <div class="step-icon">📊</div>
+        <h3 class="step-title">Você acompanha em tempo real</h3>
+        <p class="step-text">Veja o status de cada entrega em tempo real. Receba confirmações com foto e histórico completo do dia.</p>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════════════════════════
+     FUNCIONALIDADES
+══════════════════════════════════════════════════════════ -->
+<section id="funcionalidades">
+  <div class="container">
+    <div class="features-header fade-up">
+      <span class="section-tag">Funcionalidades</span>
+      <h2 class="section-title">Tudo que sua operação precisa</h2>
+      <p class="section-sub">Uma plataforma completa, do despacho à confirmação de entrega.</p>
+    </div>
+
+    <div class="features-grid">
+
+      <div class="feature-card fade-up">
+        <div class="feature-icon-wrap">🗺️</div>
+        <h3 class="feature-title">Roteirização Inteligente</h3>
+        <p class="feature-text">Algoritmo que ordena automaticamente as paradas pelo menor caminho, reduzindo tempo e combustível da sua frota.</p>
+      </div>
+
+      <div class="feature-card fade-up">
+        <div class="feature-icon-wrap">📱</div>
+        <h3 class="feature-title">App Nativo Android</h3>
+        <p class="feature-text">App leve e rápido para os motoristas. Funciona com qualquer smartphone Android, sem configuração técnica.</p>
+      </div>
+
+      <div class="feature-card fade-up">
+        <div class="feature-icon-wrap">📸</div>
+        <h3 class="feature-title">Comprovante por Foto</h3>
+        <p class="feature-text">O motorista fotografa a entrega direto no app. A imagem é armazenada na nuvem e vinculada ao pedido.</p>
+      </div>
+
+      <div class="feature-card fade-up">
+        <div class="feature-icon-wrap">⚡</div>
+        <h3 class="feature-title">Atualização em Tempo Real</h3>
+        <p class="feature-text">Cada mudança de status — entregue, recusado, cancelado — é sincronizada instantaneamente via Firebase.</p>
+      </div>
+
+      <div class="feature-card fade-up">
+        <div class="feature-icon-wrap">📋</div>
+        <h3 class="feature-title">Importação via CSV</h3>
+        <p class="feature-text">Exporte sua lista de pedidos do ERP como CSV e importe com um toque. 70 endereços em segundos, sem digitação.</p>
+      </div>
+
+      <div class="feature-card fade-up">
+        <div class="feature-icon-wrap">📈</div>
+        <h3 class="feature-title">Histórico e Relatórios</h3>
+        <p class="feature-text">Histórico completo de todas as entregas por motorista, com data, status, foto e endereço. Dados dos últimos 30 dias.</p>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════════════════════════
+     APP SCREENSHOTS
+══════════════════════════════════════════════════════════ -->
+<section id="screenshots">
+  <div class="container">
+    <div class="features-header fade-up">
+      <span class="section-tag">App em Ação</span>
+      <h2 class="section-title">Veja o LinkingGo por dentro</h2>
+      <p class="section-sub">Telas reais do app, rodando em produção.</p>
+    </div>
+
+    <div class="screenshots-grid">
+
+      <div class="screenshot-item fade-up">
+        <div class="screenshot-phone">
+          <img src="assets/img/loginscreen.jpeg" alt="Tela de Login" />
+        </div>
+        <h3 class="screenshot-title">Acesso Simples e Seguro</h3>
+        <p class="screenshot-text">Login com e-mail ou Google. O motorista entra em segundos e já vê a rota do dia.</p>
+      </div>
+
+      <div class="screenshot-item fade-up screenshot-featured">
+        <div class="screenshot-phone">
+          <img src="assets/img/routescreen.jpeg" alt="Tela de Rotas" />
+        </div>
+        <h3 class="screenshot-title">Rota Otimizada no Mapa</h3>
+        <p class="screenshot-text">Mapa interativo com todos os pontos numerados, polilinha de trajeto e lista de paradas com status em tempo real.</p>
+      </div>
+
+      <div class="screenshot-item fade-up">
+        <div class="screenshot-phone">
+          <img src="assets/img/historyscreen.jpeg" alt="Tela de Histórico" />
+        </div>
+        <h3 class="screenshot-title">Histórico dos Últimos 30 Dias</h3>
+        <p class="screenshot-text">Registro completo de cada entrega com status, endereço e comprovante fotográfico por motorista.</p>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════════════════════════
+     INTEGRAÇÃO
+══════════════════════════════════════════════════════════ -->
+<section id="integracao">
+  <div class="container">
+    <div class="integration-inner">
+
+      <!-- Left -->
+      <div class="integration-content fade-up">
+        <span class="section-tag" style="background:rgba(255,255,255,.12);color:#93C5FD;">Integração</span>
+        <h2 class="section-title">Conecta com o sistema que você já usa</h2>
+        <p class="section-sub">Não precisa mudar seu ERP ou sistema de gestão. O LinkingGo recebe as rotas de cada motorista via API REST e sincroniza automaticamente com o app.</p>
+
+        <div class="integration-list">
+          <div class="integration-item">
+            <div class="ii-icon">🔗</div>
+            <div>
+              <div class="ii-title">API REST documentada</div>
+              <div class="ii-text">Endpoints simples para criar rotas, adicionar paradas e consultar status de entregas em tempo real.</div>
+            </div>
+          </div>
+          <div class="integration-item">
+            <div class="ii-icon">📂</div>
+            <div>
+              <div class="ii-title">Importação CSV</div>
+              <div class="ii-text">Exporte do seu sistema e importe no app com um clique. Suporta até centenas de endereços por arquivo.</div>
+            </div>
+          </div>
+          <div class="integration-item">
+            <div class="ii-icon">🔔</div>
+            <div>
+              <div class="ii-title">Webhooks de status</div>
+              <div class="ii-text">Receba notificações automáticas no seu sistema quando uma entrega for confirmada ou recusada.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right — code block -->
+      <div class="fade-up">
+        <div class="code-block">
+          <div class="code-header">
+            <div class="code-dots">
+              <span></span><span></span><span></span>
+            </div>
+            <span class="code-label">POST /api/v1/routes</span>
+          </div>
+          <div class="code-body">
+<span class="c-punct">{</span><br>
+&nbsp;&nbsp;<span class="c-key">"driverId"</span><span class="c-punct">:</span> <span class="c-str">"motorista_123"</span><span class="c-punct">,</span><br>
+&nbsp;&nbsp;<span class="c-key">"waypoints"</span><span class="c-punct">: [</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="c-punct">{</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="c-key">"address"</span><span class="c-punct">:</span> <span class="c-str">"Av Paulista, 1000"</span><span class="c-punct">,</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="c-key">"note"</span><span class="c-punct">:</span> <span class="c-str">"Sala 45"</span><span class="c-punct">,</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="c-key">"orderId"</span><span class="c-punct">:</span> <span class="c-str">"PED-001"</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="c-punct">}</span><br>
+&nbsp;&nbsp;<span class="c-punct">]</span><br>
+<span class="c-punct">}</span><br><br>
+<span class="c-comment">// Resposta</span><br>
+<span class="c-punct">{</span><br>
+&nbsp;&nbsp;<span class="c-key">"routeId"</span><span class="c-punct">:</span> <span class="c-str">"rt_abc123"</span><span class="c-punct">,</span><br>
+&nbsp;&nbsp;<span class="c-key">"status"</span><span class="c-punct">:</span>  <span class="c-val">"dispatched"</span><span class="c-punct">,</span><br>
+&nbsp;&nbsp;<span class="c-key">"optimized"</span><span class="c-punct">:</span> <span class="c-val">true</span><br>
+<span class="c-punct">}</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════════════════════════
+     PREÇOS
+══════════════════════════════════════════════════════════ -->
+<section id="precos">
+  <div class="container">
+    <div class="pricing-header fade-up">
+      <span class="section-tag">Planos e Preços</span>
+      <h2 class="section-title">Transparente desde o primeiro dia</h2>
+      <p class="section-sub">Sem taxa de setup, sem fidelidade. Cancele quando quiser.</p>
+    </div>
+
+    <div class="pricing-grid">
+
+      <!-- Starter -->
+      <div class="pricing-card fade-up">
+        <div class="plan-name">Starter</div>
+        <div class="plan-price">
+          <span class="price-currency">R$</span>
+          <span class="price-value">97</span>
+          <span class="price-period">/mês</span>
+        </div>
+        <div class="plan-drivers">Até 5 motoristas</div>
+        <ul class="plan-features">
+          <li class="plan-feature"><span class="check">✓</span> App Android para motoristas</li>
+          <li class="plan-feature"><span class="check">✓</span> Roteirização automática</li>
+          <li class="plan-feature"><span class="check">✓</span> Importação CSV</li>
+          <li class="plan-feature"><span class="check">✓</span> Comprovante por foto</li>
+          <li class="plan-feature"><span class="check">✓</span> Histórico 30 dias</li>
+          <li class="plan-feature"><span class="dash">–</span> Integração via API</li>
+          <li class="plan-feature"><span class="dash">–</span> Webhooks de status</li>
+          <li class="plan-feature"><span class="dash">–</span> Suporte prioritário</li>
+        </ul>
+        <div class="plan-cta">
+          <a href="#contato" class="btn btn-outline">Começar agora</a>
+        </div>
+      </div>
+
+      <!-- Pro (featured) -->
+      <div class="pricing-card featured fade-up">
+        <div class="pricing-badge">Mais popular</div>
+        <div class="plan-name">Pro</div>
+        <div class="plan-price">
+          <span class="price-currency">R$</span>
+          <span class="price-value">247</span>
+          <span class="price-period">/mês</span>
+        </div>
+        <div class="plan-drivers">Até 20 motoristas</div>
+        <ul class="plan-features">
+          <li class="plan-feature"><span class="check">✓</span> App Android para motoristas</li>
+          <li class="plan-feature"><span class="check">✓</span> Roteirização automática</li>
+          <li class="plan-feature"><span class="check">✓</span> Importação CSV</li>
+          <li class="plan-feature"><span class="check">✓</span> Comprovante por foto</li>
+          <li class="plan-feature"><span class="check">✓</span> Histórico 30 dias</li>
+          <li class="plan-feature"><span class="check">✓</span> Integração via API</li>
+          <li class="plan-feature"><span class="check">✓</span> Webhooks de status</li>
+          <li class="plan-feature"><span class="dash">–</span> Suporte prioritário</li>
+        </ul>
+        <div class="plan-cta">
+          <a href="#contato" class="btn btn-primary">Começar agora</a>
+        </div>
+      </div>
+
+      <!-- Enterprise -->
+      <div class="pricing-card fade-up">
+        <div class="plan-name">Enterprise</div>
+        <div class="plan-price">
+          <span class="price-value consult">Sob consulta</span>
+        </div>
+        <div class="plan-drivers">Motoristas ilimitados</div>
+        <ul class="plan-features">
+          <li class="plan-feature"><span class="check">✓</span> App Android para motoristas</li>
+          <li class="plan-feature"><span class="check">✓</span> Roteirização automática</li>
+          <li class="plan-feature"><span class="check">✓</span> Importação CSV</li>
+          <li class="plan-feature"><span class="check">✓</span> Comprovante por foto</li>
+          <li class="plan-feature"><span class="check">✓</span> Histórico personalizado</li>
+          <li class="plan-feature"><span class="check">✓</span> Integração via API</li>
+          <li class="plan-feature"><span class="check">✓</span> Webhooks de status</li>
+          <li class="plan-feature"><span class="check">✓</span> Suporte prioritário 24h</li>
+        </ul>
+        <div class="plan-cta">
+          <a href="https://wa.me/5511911931232?text=Olá!%20Tenho%20interesse%20no%20plano%20Enterprise%20do%20LinkingGo."
+             target="_blank" class="btn btn-outline">Falar com vendas</a>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════════════════════════
+     DOWNLOAD
+══════════════════════════════════════════════════════════ -->
+<section id="download">
+  <div class="container">
+    <div class="download-inner">
+      <div class="download-content fade-up">
+        <span class="section-tag" style="background:rgba(255,255,255,.15);color:#BFDBFE;">App para Motoristas</span>
+        <h2 class="section-title">Seu motorista baixa, você já começa a operar</h2>
+        <p class="section-sub">App gratuito para o motorista. Disponível para Android. Sem configuração técnica — basta fazer login e a rota do dia já aparece.</p>
+        <div class="download-actions">
+          <a href="#" class="store-btn">
+            <span class="store-btn-icon">▶</span>
+            <div class="store-btn-text">
+              <span class="store-btn-label">Disponível no</span>
+              <span class="store-btn-name">Google Play</span>
+            </div>
+          </a>
+        </div>
+      </div>
+
+      <div class="download-phones fade-up">
+        <div class="phone-mockup" style="width:200px;">
+          <img
+            src="assets/img/loginscreen.jpeg"
+            alt="LinkingGo Login"
+            style="width:100%;border-radius:28px;display:block;"
+          />
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════════════════════════
+     CONTATO
+══════════════════════════════════════════════════════════ -->
+<section id="contato">
+  <div class="container">
+    <div class="contact-inner">
+
+      <div class="contact-info fade-up">
+        <span class="section-tag">Fale Conosco</span>
+        <h2 class="section-title">Pronto para transformar sua operação?</h2>
+        <p class="section-sub">Entre em contato para uma demonstração gratuita. Nossa equipe explica como o LinkingGo se adapta ao seu negócio.</p>
+
+        <div class="contact-item">
+          <div class="ci-icon">💬</div>
+          <div>
+            <div class="ci-label">WhatsApp</div>
+            <div class="ci-value">
+              <a href="https://wa.me/5511911931232" target="_blank" style="color:var(--blue);">
+                (11) 91193-1232
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <div class="contact-item">
+          <div class="ci-icon">🌐</div>
+          <div>
+            <div class="ci-label">Site</div>
+            <div class="ci-value">linkinggo.com.br</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="contact-form fade-up">
+        <h3 class="form-title">Solicitar Demonstração</h3>
+        <form id="contact-form">
+          <input type="hidden" name="access_key" value="cbdff69d-7513-4eb1-ac46-c72589f96940" />
+          <input type="hidden" name="subject" value="Nova solicitação de demonstração — LinkingGo" />
+          <input type="hidden" name="from_name" value="LinkingGo Site" />
+          <div class="form-row">
+            <div class="form-group">
+              <label>Nome</label>
+              <input type="text" name="nome" placeholder="Seu nome" required />
+            </div>
+            <div class="form-group">
+              <label>Empresa</label>
+              <input type="text" name="empresa" placeholder="Nome da empresa" required />
+            </div>
+          </div>
+          <div class="form-group">
+            <label>E-mail</label>
+            <input type="email" name="email" placeholder="seu@email.com" required />
+          </div>
+          <div class="form-group">
+            <label>Quantos motoristas?</label>
+            <select name="drivers">
+              <option>1 a 5</option>
+              <option>6 a 20</option>
+              <option>21 a 50</option>
+              <option>Mais de 50</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Mensagem (opcional)</label>
+            <textarea name="mensagem" placeholder="Conte um pouco sobre sua operação..."></textarea>
+          </div>
+          <div class="form-submit">
+            <button type="submit" class="btn btn-primary">Solicitar Demonstração</button>
+          </div>
+        </form>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════════════════════════
+     FOOTER
+══════════════════════════════════════════════════════════ -->
+<footer>
+  <div class="container">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <img src="assets/img/logo.png" alt="LinkingGo" />
+        <p>Plataforma de gestão de entregas para empresas que precisam de agilidade, rastreabilidade e controle total da sua frota.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Produto</h4>
+        <a href="#como-funciona">Como Funciona</a>
+        <a href="#funcionalidades">Funcionalidades</a>
+        <a href="#integracao">Integração API</a>
+        <a href="#precos">Preços</a>
+      </div>
+      <div class="footer-col">
+        <h4>Empresa</h4>
+        <a href="#contato">Contato</a>
+        <a href="#download">App Android</a>
+      </div>
+      <div class="footer-col">
+        <h4>Suporte</h4>
+        <a href="https://wa.me/5511911931232" target="_blank">WhatsApp</a>
+        <a href="#contato">Demonstração</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2025 LinkingGo. Todos os direitos reservados.</span>
+      <span>Desenvolvido com ❤️ no Brasil</span>
+    </div>
+  </div>
+</footer>
+
+
+<!-- ══════════════════════════════════════════════════════════
+     WHATSAPP FAB
+══════════════════════════════════════════════════════════ -->
+<a href="https://wa.me/5511911931232?text=Olá!%20Tenho%20interesse%20no%20LinkingGo." target="_blank" class="whatsapp-fab" aria-label="Falar no WhatsApp">
+  <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+  </svg>
+</a>
+
+
+<script src="assets/js/main.js"></script>
+</body>
+</html>

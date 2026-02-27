@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LinkingGo — Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --blue:       #2563EB;
+      --blue-dark:  #1D4ED8;
+      --blue-light: #EFF6FF;
+      --gray-900:   #0F172A;
+      --gray-800:   #1E293B;
+      --gray-700:   #334155;
+      --gray-600:   #475569;
+      --gray-500:   #64748B;
+      --gray-300:   #CBD5E1;
+      --gray-200:   #E2E8F0;
+      --gray-100:   #F1F5F9;
+      --white:      #FFFFFF;
+      --green:      #16A34A;
+      --red:        #EF4444;
+      --orange:     #F4720A;
+    }
+    html { font-size: 16px; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--gray-100);
+      color: var(--gray-800);
+      min-height: 100vh;
+    }
+
+    /* ── Password Gate ── */
+    #gate {
+      position: fixed;
+      inset: 0;
+      background: linear-gradient(135deg, #0F172A 0%, #1E3A5F 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+    }
+    .gate-card {
+      background: var(--white);
+      border-radius: 20px;
+      padding: 48px 40px;
+      width: 100%;
+      max-width: 380px;
+      text-align: center;
+      box-shadow: 0 32px 80px rgba(0,0,0,.4);
+    }
+    .gate-card img { height: 44px; margin: 0 auto 16px; }
+    .gate-card h2 { font-size: 1.25rem; font-weight: 700; color: var(--gray-900); margin-bottom: 6px; }
+    .gate-card p  { font-size: .875rem; color: var(--gray-500); margin-bottom: 24px; }
+    .gate-card input {
+      width: 100%;
+      padding: 12px 16px;
+      border: 1.5px solid var(--gray-300);
+      border-radius: 10px;
+      font-size: .9375rem;
+      font-family: 'Inter', sans-serif;
+      color: var(--gray-900);
+      background: var(--gray-100);
+      outline: none;
+      margin-bottom: 14px;
+    }
+    .gate-card input:focus { border-color: var(--blue); background: var(--white); }
+    .gate-card button {
+      width: 100%;
+      padding: 13px;
+      background: var(--blue);
+      color: var(--white);
+      border: none;
+      border-radius: 10px;
+      font-size: 1rem;
+      font-weight: 700;
+      font-family: 'Inter', sans-serif;
+      cursor: pointer;
+    }
+    .gate-card button:hover { background: var(--blue-dark); }
+    .gate-error {
+      color: var(--red);
+      font-size: .825rem;
+      margin-top: 10px;
+      display: none;
+    }
+
+    /* ── App Shell ── */
+    #app { display: none; }
+
+    /* ── Header ── */
+    header {
+      background: var(--gray-900);
+      color: var(--white);
+      padding: 0 32px;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    header .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    header .brand img { height: 32px; }
+    header .brand span {
+      font-size: .75rem;
+      font-weight: 700;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,.5);
+    }
+    header a {
+      color: rgba(255,255,255,.6);
+      font-size: .875rem;
+      font-weight: 500;
+      transition: color .2s;
+    }
+    header a:hover { color: var(--white); }
+
+    /* ── Layout ── */
+    .layout {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 32px 24px;
+    }
+
+    /* ── Page title ── */
+    .page-title {
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: var(--gray-900);
+      margin-bottom: 4px;
+    }
+    .page-sub {
+      color: var(--gray-500);
+      font-size: .875rem;
+      margin-bottom: 32px;
+    }
+
+    /* ── Grid ── */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1.6fr;
+      gap: 28px;
+      align-items: start;
+    }
+
+    /* ── Cards ── */
+    .card {
+      background: var(--white);
+      border-radius: 16px;
+      padding: 28px;
+      box-shadow: 0 2px 12px rgba(0,0,0,.06);
+    }
+    .card h3 {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--gray-900);
+      margin-bottom: 20px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid var(--gray-200);
+    }
+
+    /* ── Form ── */
+    .form-group { margin-bottom: 16px; }
+    label {
+      display: block;
+      font-size: .8rem;
+      font-weight: 600;
+      color: var(--gray-600);
+      margin-bottom: 5px;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+    }
+    input[type="text"],
+    input[type="email"],
+    input[type="tel"],
+    select {
+      width: 100%;
+      padding: 11px 14px;
+      border: 1.5px solid var(--gray-200);
+      border-radius: 8px;
+      font-size: .9rem;
+      font-family: 'Inter', sans-serif;
+      color: var(--gray-900);
+      background: var(--gray-100);
+      outline: none;
+      transition: border-color .2s, background .2s;
+    }
+    input:focus, select:focus { border-color: var(--blue); background: var(--white); }
+
+    .btn {
+      display: inline-block;
+      padding: 11px 24px;
+      border-radius: 8px;
+      font-size: .875rem;
+      font-weight: 700;
+      font-family: 'Inter', sans-serif;
+      cursor: pointer;
+      border: none;
+      transition: all .2s;
+    }
+    .btn-primary { background: var(--blue); color: var(--white); width: 100%; }
+    .btn-primary:hover { background: var(--blue-dark); }
+    .btn-danger  { background: #FEF2F2; color: var(--red); padding: 6px 14px; font-size: .8rem; }
+    .btn-danger:hover { background: #FEE2E2; }
+
+    /* ── Company list ── */
+    .company-list { display: flex; flex-direction: column; gap: 12px; }
+    .company-item {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 14px 16px;
+      background: var(--gray-100);
+      border-radius: 10px;
+      border: 1px solid var(--gray-200);
+    }
+    .company-avatar {
+      width: 42px;
+      height: 42px;
+      border-radius: 10px;
+      background: var(--blue);
+      color: var(--white);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+      font-weight: 800;
+      flex-shrink: 0;
+    }
+    .company-info { flex: 1; min-width: 0; }
+    .company-name {
+      font-weight: 700;
+      font-size: .9rem;
+      color: var(--gray-900);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .company-meta { font-size: .775rem; color: var(--gray-500); margin-top: 2px; }
+
+    .badge {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 999px;
+      font-size: .72rem;
+      font-weight: 700;
+      letter-spacing: .04em;
+    }
+    .badge-starter  { background: var(--gray-100); color: var(--gray-600); border: 1px solid var(--gray-300); }
+    .badge-pro      { background: var(--blue-light); color: var(--blue); }
+    .badge-enterprise { background: #FFF7ED; color: var(--orange); }
+    .badge-active   { background: #F0FDF4; color: var(--green); }
+    .badge-inactive { background: #FEF2F2; color: var(--red); }
+
+    /* ── Stats row ── */
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+    .stat-card {
+      background: var(--white);
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,.05);
+      text-align: center;
+    }
+    .stat-num {
+      font-size: 2rem;
+      font-weight: 800;
+      color: var(--gray-900);
+      line-height: 1;
+    }
+    .stat-label {
+      font-size: .775rem;
+      color: var(--gray-500);
+      margin-top: 4px;
+    }
+
+    /* ── Empty state ── */
+    .empty {
+      text-align: center;
+      padding: 40px 0;
+      color: var(--gray-500);
+      font-size: .875rem;
+    }
+
+    /* ── Alert ── */
+    .alert {
+      padding: 11px 14px;
+      border-radius: 8px;
+      font-size: .85rem;
+      font-weight: 500;
+      margin-bottom: 16px;
+      display: none;
+    }
+    .alert.error   { background: #FEF2F2; color: var(--red);   border: 1px solid #FECACA; display: block; }
+    .alert.success { background: #F0FDF4; color: var(--green); border: 1px solid #BBF7D0; display: block; }
+
+    @media (max-width: 768px) {
+      .grid-2 { grid-template-columns: 1fr; }
+      .stats-row { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════════════
+     PASSWORD GATE
+══════════════════════════════════════════════════════════ -->
+<div id="gate">
+  <div class="gate-card">
+    <img src="assets/img/logo.png" alt="LinkingGo" />
+    <h2>Admin</h2>
+    <p>Área restrita — insira a senha para continuar</p>
+    <input type="password" id="gate-pass" placeholder="Senha de administrador"
+           onkeydown="if(event.key==='Enter') checkGate()" />
+    <button onclick="checkGate()">Acessar</button>
+    <div class="gate-error" id="gate-error">Senha incorreta.</div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     APP
+══════════════════════════════════════════════════════════ -->
+<div id="app">
+
+  <header>
+    <div class="brand">
+      <img src="assets/img/logo.png" alt="LinkingGo" />
+      <span>Admin</span>
+    </div>
+    <a href="index.html">← Voltar ao site</a>
+  </header>
+
+  <div class="layout">
+    <div class="page-title">Painel Administrativo</div>
+    <div class="page-sub">Cadastre e gerencie as empresas na plataforma LinkingGo</div>
+
+    <!-- Stats -->
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-num" id="stat-total">–</div>
+        <div class="stat-label">Empresas cadastradas</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" id="stat-active">–</div>
+        <div class="stat-label">Ativas</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" id="stat-plan-pro">–</div>
+        <div class="stat-label">Plano Pro ou superior</div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+
+      <!-- ── Register form ── -->
+      <div class="card">
+        <h3>Cadastrar Nova Empresa</h3>
+        <div id="form-alert" class="alert"></div>
+        <form id="company-form" onsubmit="handleSubmit(event)">
+          <div class="form-group">
+            <label>Nome da empresa</label>
+            <input type="text" id="f-name" placeholder="Transportadora XYZ" required />
+          </div>
+          <div class="form-group">
+            <label>CNPJ</label>
+            <input type="text" id="f-cnpj" placeholder="00.000.000/0001-00" maxlength="18" />
+          </div>
+          <div class="form-group">
+            <label>E-mail do gestor</label>
+            <input type="email" id="f-email" placeholder="gestor@empresa.com" required />
+          </div>
+          <div class="form-group">
+            <label>Telefone</label>
+            <input type="tel" id="f-phone" placeholder="(11) 99999-9999" />
+          </div>
+          <div class="form-group">
+            <label>Plano</label>
+            <select id="f-plan">
+              <option value="starter">Starter — R$ 97/mês (5 motoristas)</option>
+              <option value="pro">Pro — R$ 378/mês (20 motoristas)</option>
+              <option value="enterprise">Enterprise — Sob consulta</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Status</label>
+            <select id="f-active">
+              <option value="true">Ativa</option>
+              <option value="false">Inativa</option>
+            </select>
+          </div>
+          <button type="submit" class="btn btn-primary" id="submit-btn">Cadastrar Empresa</button>
+        </form>
+      </div>
+
+      <!-- ── Company list ── -->
+      <div class="card">
+        <h3>Empresas Cadastradas</h3>
+        <div class="company-list" id="company-list">
+          <div class="empty">Carregando...</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Firebase SDK -->
+<script type="module">
+  import { initializeApp }   from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+  import { getFirestore, collection, addDoc, getDocs, doc, deleteDoc,
+           serverTimestamp, query, orderBy }
+    from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+  const firebaseConfig = {
+    apiKey:            'AIzaSyDnStmxzdXdzIwwqzhiB1tPHOdACOd7MeE',
+    authDomain:        'linkinggo.firebaseapp.com',
+    projectId:         'linkinggo',
+    storageBucket:     'linkinggo.firebasestorage.app',
+    messagingSenderId: '132678928883',
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db  = getFirestore(app);
+
+  // ── Password gate ──────────────────────────────────────────
+  window.checkGate = function() {
+    const pass = document.getElementById('gate-pass').value;
+    if (pass === 'admin_empr1') {
+      document.getElementById('gate').style.display = 'none';
+      document.getElementById('app').style.display  = 'block';
+      loadCompanies();
+    } else {
+      document.getElementById('gate-error').style.display = 'block';
+      document.getElementById('gate-pass').value = '';
+    }
+  };
+
+  // ── Load companies ─────────────────────────────────────────
+  async function loadCompanies() {
+    const list = document.getElementById('company-list');
+    try {
+      const q    = query(collection(db, 'companies'), orderBy('createdAt', 'desc'));
+      const snap = await getDocs(q);
+      const docs = [];
+      snap.forEach(d => docs.push({ id: d.id, ...d.data() }));
+
+      document.getElementById('stat-total').textContent    = docs.length;
+      document.getElementById('stat-active').textContent   = docs.filter(d => d.active !== false).length;
+      document.getElementById('stat-plan-pro').textContent = docs.filter(d => d.plan === 'pro' || d.plan === 'enterprise').length;
+
+      if (docs.length === 0) {
+        list.innerHTML = '<div class="empty">Nenhuma empresa cadastrada ainda.</div>';
+        return;
+      }
+
+      list.innerHTML = docs.map(c => {
+        const initial = (c.name || '?')[0].toUpperCase();
+        const plan    = c.plan || 'starter';
+        const active  = c.active !== false;
+        const planLabel = { starter: 'Starter', pro: 'Pro', enterprise: 'Enterprise' }[plan] || plan;
+        return `
+        <div class="company-item">
+          <div class="company-avatar">${initial}</div>
+          <div class="company-info">
+            <div class="company-name">${c.name || '–'}</div>
+            <div class="company-meta">${c.email || '–'} · ${c.cnpj || 'sem CNPJ'}</div>
+            <div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap;">
+              <span class="badge badge-${plan}">${planLabel}</span>
+              <span class="badge badge-${active ? 'active' : 'inactive'}">${active ? 'Ativa' : 'Inativa'}</span>
+            </div>
+          </div>
+          <button class="btn btn-danger" onclick="deleteCompany('${c.id}')">Remover</button>
+        </div>`;
+      }).join('');
+    } catch (err) {
+      list.innerHTML = `<div class="empty" style="color:red">Erro ao carregar: ${err.message}</div>`;
+    }
+  }
+
+  // ── Delete company ─────────────────────────────────────────
+  window.deleteCompany = async function(id) {
+    if (!confirm('Remover esta empresa permanentemente?')) return;
+    try {
+      await deleteDoc(doc(db, 'companies', id));
+      loadCompanies();
+    } catch (err) {
+      alert('Erro ao remover: ' + err.message);
+    }
+  };
+
+  // ── Submit form ────────────────────────────────────────────
+  window.handleSubmit = async function(e) {
+    e.preventDefault();
+    const alertEl = document.getElementById('form-alert');
+    alertEl.className = 'alert';
+    const btn = document.getElementById('submit-btn');
+    btn.disabled = true;
+    btn.textContent = 'Salvando...';
+
+    const data = {
+      name:      document.getElementById('f-name').value.trim(),
+      cnpj:      document.getElementById('f-cnpj').value.trim(),
+      email:     document.getElementById('f-email').value.trim(),
+      phone:     document.getElementById('f-phone').value.trim(),
+      plan:      document.getElementById('f-plan').value,
+      active:    document.getElementById('f-active').value === 'true',
+      createdAt: serverTimestamp(),
+    };
+
+    try {
+      await addDoc(collection(db, 'companies'), data);
+      alertEl.textContent = `Empresa "${data.name}" cadastrada com sucesso!`;
+      alertEl.className = 'alert success';
+      document.getElementById('company-form').reset();
+      loadCompanies();
+    } catch (err) {
+      alertEl.textContent = 'Erro ao cadastrar: ' + err.message;
+      alertEl.className = 'alert error';
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Cadastrar Empresa';
+    }
+  };
+</script>
+
+</body>
+</html>

@@ -1,0 +1,1020 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LinkingGo — Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <!-- Google Maps -->
+  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDnStmxzdXdzIwwqzhiB1tPHOdACOd7MeE&libraries=places&loading=async" async defer></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --blue:        #2563EB;
+      --blue-dark:   #1D4ED8;
+      --blue-light:  #EFF6FF;
+      --blue-mid:    #BFDBFE;
+      --gray-900:    #0F172A;
+      --gray-800:    #1E293B;
+      --gray-700:    #334155;
+      --gray-600:    #475569;
+      --gray-500:    #64748B;
+      --gray-400:    #94A3B8;
+      --gray-300:    #CBD5E1;
+      --gray-200:    #E2E8F0;
+      --gray-100:    #F1F5F9;
+      --white:       #FFFFFF;
+      --green:       #16A34A;
+      --green-light: #DCFCE7;
+      --red:         #EF4444;
+      --orange:      #F4720A;
+      --orange-light:#FFF7ED;
+      --sidebar-w:   300px;
+      --header-h:    60px;
+    }
+    html, body { height: 100%; font-family: 'Inter', sans-serif; overflow: hidden; }
+    body { background: var(--gray-100); color: var(--gray-800); }
+
+    /* ── Auth overlay ── */
+    #auth-overlay {
+      position: fixed;
+      inset: 0;
+      background: linear-gradient(135deg, #0F172A 0%, #1E3A5F 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+    }
+    .auth-card {
+      background: var(--white);
+      border-radius: 20px;
+      padding: 48px 40px;
+      max-width: 380px;
+      width: 90%;
+      text-align: center;
+      box-shadow: 0 32px 80px rgba(0,0,0,.4);
+    }
+    .auth-card img  { height: 44px; margin: 0 auto 14px; }
+    .auth-card h2   { font-size: 1.25rem; font-weight: 700; margin-bottom: 6px; }
+    .auth-card p    { font-size: .875rem; color: var(--gray-500); margin-bottom: 16px; }
+    .auth-card .spinner {
+      width: 36px; height: 36px;
+      border: 3px solid var(--gray-200);
+      border-top-color: var(--blue);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      margin: 16px auto 0;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── App Shell ── */
+    #app { display: none; height: 100vh; flex-direction: column; }
+
+    /* ── Header ── */
+    header {
+      height: var(--header-h);
+      background: var(--gray-900);
+      color: var(--white);
+      display: flex;
+      align-items: center;
+      padding: 0 20px;
+      gap: 16px;
+      flex-shrink: 0;
+      z-index: 50;
+      box-shadow: 0 2px 12px rgba(0,0,0,.2);
+    }
+    header .brand { display: flex; align-items: center; gap: 10px; flex: 1; }
+    header .brand img { height: 30px; }
+    header .brand-text { font-size: .8rem; font-weight: 700; letter-spacing: .08em;
+      text-transform: uppercase; color: rgba(255,255,255,.45); }
+    header .company-name { font-size: .95rem; font-weight: 700; color: var(--white); }
+    .header-actions { display: flex; align-items: center; gap: 10px; }
+
+    .btn-sm {
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: .825rem;
+      font-weight: 700;
+      font-family: 'Inter', sans-serif;
+      cursor: pointer;
+      border: none;
+      transition: all .2s;
+    }
+    .btn-blue    { background: var(--blue); color: var(--white); }
+    .btn-blue:hover { background: var(--blue-dark); }
+    .btn-ghost-w { background: rgba(255,255,255,.1); color: var(--white); }
+    .btn-ghost-w:hover { background: rgba(255,255,255,.2); }
+    .btn-red     { background: #FEF2F2; color: var(--red); }
+    .btn-red:hover { background: #FEE2E2; }
+
+    /* ── Main layout ── */
+    .main-layout {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    /* ── Sidebar ── */
+    .sidebar {
+      width: var(--sidebar-w);
+      background: var(--white);
+      border-right: 1px solid var(--gray-200);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+    .sidebar-header {
+      padding: 16px 18px 12px;
+      border-bottom: 1px solid var(--gray-200);
+      flex-shrink: 0;
+    }
+    .sidebar-title { font-weight: 700; font-size: .875rem; color: var(--gray-900); margin-bottom: 10px; }
+    .sidebar-search {
+      position: relative;
+    }
+    .sidebar-search input {
+      width: 100%;
+      padding: 8px 12px 8px 32px;
+      border: 1.5px solid var(--gray-200);
+      border-radius: 8px;
+      font-size: .825rem;
+      font-family: 'Inter', sans-serif;
+      color: var(--gray-900);
+      background: var(--gray-100);
+      outline: none;
+    }
+    .sidebar-search input:focus { border-color: var(--blue); background: var(--white); }
+    .search-icon {
+      position: absolute;
+      left: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--gray-400);
+      font-size: .85rem;
+    }
+
+    .driver-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 10px;
+    }
+    .driver-card {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background .15s;
+      border: 1px solid transparent;
+      margin-bottom: 4px;
+    }
+    .driver-card:hover { background: var(--gray-100); }
+    .driver-card.selected { background: var(--blue-light); border-color: var(--blue-mid); }
+    .driver-card.selected .driver-name { color: var(--blue); }
+
+    .driver-avatar {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: .9rem;
+      color: var(--white);
+      flex-shrink: 0;
+      position: relative;
+    }
+    .status-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      border: 2px solid var(--white);
+      position: absolute;
+      bottom: 0;
+      right: 0;
+    }
+    .status-dot.online    { background: var(--green); }
+    .status-dot.offline   { background: var(--gray-400); }
+    .status-dot.delivering { background: var(--orange); }
+
+    .driver-info { flex: 1; min-width: 0; }
+    .driver-name {
+      font-weight: 600;
+      font-size: .875rem;
+      color: var(--gray-900);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .driver-status-text { font-size: .75rem; color: var(--gray-500); margin-top: 1px; }
+    .driver-updated { font-size: .7rem; color: var(--gray-400); }
+
+    .driver-dispatch-btn {
+      padding: 5px 10px;
+      font-size: .72rem;
+      font-weight: 700;
+      border-radius: 6px;
+      background: var(--blue-light);
+      color: var(--blue);
+      border: none;
+      cursor: pointer;
+      font-family: 'Inter', sans-serif;
+      flex-shrink: 0;
+      white-space: nowrap;
+    }
+    .driver-dispatch-btn:hover { background: var(--blue-mid); }
+
+    .no-drivers {
+      text-align: center;
+      padding: 40px 16px;
+      color: var(--gray-500);
+      font-size: .85rem;
+    }
+
+    /* ── Map container ── */
+    .map-container { flex: 1; position: relative; overflow: hidden; }
+    #map { width: 100%; height: 100%; }
+
+    /* ── Map overlay info ── */
+    .map-info {
+      position: absolute;
+      top: 14px;
+      left: 14px;
+      background: var(--white);
+      border-radius: 10px;
+      padding: 10px 14px;
+      box-shadow: 0 4px 20px rgba(0,0,0,.12);
+      font-size: .8rem;
+      color: var(--gray-700);
+      z-index: 10;
+    }
+    .map-info strong { font-weight: 700; color: var(--gray-900); }
+
+    /* ── Modal ── */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.5);
+      backdrop-filter: blur(4px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 200;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .25s;
+    }
+    .modal-overlay.open { opacity: 1; pointer-events: all; }
+
+    .modal {
+      background: var(--white);
+      border-radius: 18px;
+      padding: 0;
+      width: 92%;
+      max-width: 560px;
+      max-height: 90vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 24px 80px rgba(0,0,0,.3);
+      transform: translateY(20px);
+      transition: transform .25s;
+    }
+    .modal-overlay.open .modal { transform: translateY(0); }
+
+    .modal-header {
+      padding: 20px 24px 16px;
+      border-bottom: 1px solid var(--gray-200);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .modal-header h3 { font-size: 1.05rem; font-weight: 700; color: var(--gray-900); }
+    .modal-header p  { font-size: .8rem; color: var(--gray-500); margin-top: 2px; }
+    .modal-close {
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      border: none;
+      background: var(--gray-100);
+      color: var(--gray-600);
+      font-size: 1.1rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-close:hover { background: var(--gray-200); }
+
+    .modal-body { padding: 20px 24px; overflow-y: auto; flex: 1; }
+
+    .modal-footer {
+      padding: 16px 24px;
+      border-top: 1px solid var(--gray-200);
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+    }
+
+    /* ── CSV modal specifics ── */
+    .driver-select-label { font-size: .8rem; font-weight: 600; color: var(--gray-600);
+      text-transform: uppercase; letter-spacing: .05em; margin-bottom: 6px; }
+    .driver-select {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1.5px solid var(--gray-200);
+      border-radius: 8px;
+      font-size: .9rem;
+      font-family: 'Inter', sans-serif;
+      color: var(--gray-900);
+      background: var(--gray-100);
+      outline: none;
+      margin-bottom: 16px;
+    }
+    .driver-select:focus { border-color: var(--blue); background: var(--white); }
+
+    .csv-label {
+      font-size: .8rem;
+      font-weight: 600;
+      color: var(--gray-600);
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      margin-bottom: 6px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .csv-format-hint {
+      font-size: .72rem;
+      color: var(--gray-400);
+      font-weight: 400;
+      text-transform: none;
+      letter-spacing: 0;
+    }
+    .csv-textarea {
+      width: 100%;
+      height: 180px;
+      padding: 12px 14px;
+      border: 1.5px solid var(--gray-200);
+      border-radius: 8px;
+      font-size: .82rem;
+      font-family: 'ui-monospace', 'Cascadia Code', 'Source Code Pro', monospace;
+      color: var(--gray-800);
+      background: var(--gray-100);
+      resize: vertical;
+      outline: none;
+      line-height: 1.5;
+    }
+    .csv-textarea:focus { border-color: var(--blue); background: var(--white); }
+
+    .csv-hint {
+      background: var(--blue-light);
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: .78rem;
+      color: var(--blue);
+      margin-top: 12px;
+      font-family: 'ui-monospace', monospace;
+      line-height: 1.6;
+    }
+
+    /* ── Progress bar ── */
+    .progress-wrap {
+      margin-top: 14px;
+      display: none;
+    }
+    .progress-wrap.visible { display: block; }
+    .progress-bar-bg {
+      height: 8px;
+      background: var(--gray-200);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+    .progress-bar-fill {
+      height: 100%;
+      background: var(--blue);
+      border-radius: 999px;
+      transition: width .3s ease;
+      width: 0%;
+    }
+    .progress-text {
+      font-size: .78rem;
+      color: var(--gray-500);
+      margin-top: 6px;
+    }
+
+    /* ── Status badge ── */
+    .live-badge {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: .775rem;
+      font-weight: 600;
+      color: var(--green);
+      padding: 4px 10px;
+      background: var(--green-light);
+      border-radius: 999px;
+    }
+    .live-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--green);
+      animation: pulse 1.5s ease infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: .6; transform: scale(0.8); }
+    }
+
+    /* ── Scrollbar ── */
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--gray-300); border-radius: 99px; }
+
+    /* ── Driver detail panel ── */
+    .driver-panel {
+      position: absolute;
+      bottom: 16px;
+      left: 14px;
+      background: var(--white);
+      border-radius: 12px;
+      padding: 14px 16px;
+      min-width: 220px;
+      max-width: 260px;
+      box-shadow: 0 6px 24px rgba(0,0,0,.15);
+      z-index: 10;
+      display: none;
+    }
+    .driver-panel.visible { display: block; }
+    .dp-name { font-weight: 700; font-size: .9rem; color: var(--gray-900); }
+    .dp-coords { font-size: .72rem; color: var(--gray-500); margin-top: 3px; font-family: monospace; }
+    .dp-updated { font-size: .72rem; color: var(--gray-400); margin-top: 2px; }
+    .dp-close {
+      position: absolute;
+      top: 8px; right: 8px;
+      border: none;
+      background: var(--gray-100);
+      border-radius: 50%;
+      width: 22px; height: 22px;
+      font-size: .75rem;
+      cursor: pointer;
+      color: var(--gray-600);
+    }
+  </style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════════════
+     AUTH OVERLAY
+══════════════════════════════════════════════════════════ -->
+<div id="auth-overlay">
+  <div class="auth-card">
+    <img src="assets/img/logo.png" alt="LinkingGo" />
+    <h2>Verificando acesso…</h2>
+    <p>Por favor aguarde</p>
+    <div class="spinner"></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     APP
+══════════════════════════════════════════════════════════ -->
+<div id="app">
+
+  <!-- Header -->
+  <header>
+    <div class="brand">
+      <img src="assets/img/logo.png" alt="LinkingGo" />
+      <div>
+        <div class="brand-text">Dashboard</div>
+        <div class="company-name" id="company-name-header">Carregando…</div>
+      </div>
+    </div>
+    <div class="header-actions">
+      <div class="live-badge"><div class="live-dot"></div> Ao vivo</div>
+      <button class="btn-sm btn-blue" onclick="openDispatchModal(null)">Despachar CSV</button>
+      <button class="btn-sm btn-ghost-w" onclick="handleLogout()">Sair</button>
+    </div>
+  </header>
+
+  <!-- Main -->
+  <div class="main-layout">
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-title">Motoristas</div>
+        <div class="sidebar-search">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="driver-search" placeholder="Buscar motorista…" oninput="filterDrivers()" />
+        </div>
+      </div>
+      <div class="driver-list" id="driver-list">
+        <div class="no-drivers">Aguardando localização dos motoristas…</div>
+      </div>
+    </aside>
+
+    <!-- Map -->
+    <div class="map-container">
+      <div id="map"></div>
+
+      <!-- Map overlay -->
+      <div class="map-info" id="map-info">
+        <strong id="online-count">0</strong> motoristas ativos
+      </div>
+
+      <!-- Driver detail panel -->
+      <div class="driver-panel" id="driver-panel">
+        <button class="dp-close" onclick="closeDriverPanel()">✕</button>
+        <div class="dp-name" id="dp-name">–</div>
+        <div class="dp-coords" id="dp-coords">–</div>
+        <div class="dp-updated" id="dp-updated">–</div>
+        <button class="btn-sm btn-blue" style="margin-top:10px;width:100%;font-size:.78rem"
+                onclick="dispatchToSelected()">Despachar CSV para este motorista</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     DISPATCH MODAL
+══════════════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="dispatch-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <h3>Despachar Rota via CSV</h3>
+        <p>Selecione o motorista e cole a lista de endereços</p>
+      </div>
+      <button class="modal-close" onclick="closeModal('dispatch-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="driver-select-label">Motorista</div>
+      <select class="driver-select" id="dispatch-driver-select">
+        <option value="">Selecione um motorista…</option>
+      </select>
+
+      <div class="csv-label">
+        Lista de endereços (CSV)
+        <span class="csv-format-hint">Cole diretamente da planilha</span>
+      </div>
+      <textarea class="csv-textarea" id="dispatch-csv"
+                placeholder="seq,logradouro,numero,complemento,cidade
+1,Rua das Flores,100,,São Paulo
+2,Av Paulista,1578,Apto 42,São Paulo
+3,Rua Augusta,200,,São Paulo"></textarea>
+
+      <div class="csv-hint">
+        📋 Colunas esperadas:<br>
+        seq · logradouro · numero · complemento · cidade
+      </div>
+
+      <div class="progress-wrap" id="import-progress">
+        <div class="progress-bar-bg">
+          <div class="progress-bar-fill" id="progress-fill"></div>
+        </div>
+        <div class="progress-text" id="progress-text">Geocodificando endereços…</div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-sm btn-ghost-w" style="color:var(--gray-700);background:var(--gray-100)"
+              onclick="closeModal('dispatch-modal')">Cancelar</button>
+      <button class="btn-sm btn-blue" id="dispatch-btn" onclick="handleDispatch()">Enviar Rota</button>
+    </div>
+  </div>
+</div>
+
+<!-- Firebase SDK -->
+<script type="module">
+  import { initializeApp }    from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+  import { getAuth, onAuthStateChanged, signOut }
+    from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+  import { getFirestore, doc, getDoc, collection, query, where,
+           onSnapshot, orderBy, addDoc, serverTimestamp, getDocs }
+    from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+  const firebaseConfig = {
+    apiKey:            'AIzaSyDnStmxzdXdzIwwqzhiB1tPHOdACOd7MeE',
+    authDomain:        'linkinggo.firebaseapp.com',
+    projectId:         'linkinggo',
+    storageBucket:     'linkinggo.firebasestorage.app',
+    messagingSenderId: '132678928883',
+  };
+
+  const app  = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db   = getFirestore(app);
+
+  const MAPS_KEY = 'AIzaSyDnStmxzdXdzIwwqzhiB1tPHOdACOd7MeE';
+
+  let map           = null;
+  let markers       = {};          // { driverId: google.maps.Marker }
+  let driverData    = {};          // { driverId: location doc }
+  let companyId     = null;
+  let companyName   = '';
+  let selectedDriver = null;
+  let unsubLocations = null;
+  let unsubDrivers   = null;
+
+  // Avatar colors
+  const COLORS = ['#2563EB','#7C3AED','#DB2777','#DC2626','#D97706','#059669','#0891B2'];
+  const colorFor = name => COLORS[(name||'?').charCodeAt(0) % COLORS.length];
+
+  // ── Auth check ─────────────────────────────────────────────
+  onAuthStateChanged(auth, async user => {
+    if (!user) {
+      window.location.href = 'gestor.html';
+      return;
+    }
+    const snap = await getDoc(doc(db, 'users', user.uid));
+    if (!snap.exists() || snap.data().role !== 'manager') {
+      await auth.signOut();
+      window.location.href = 'gestor.html';
+      return;
+    }
+    const userData = snap.data();
+    companyId   = userData.managedCompany;
+    // get company name
+    if (companyId) {
+      const cSnap = await getDoc(doc(db, 'companies', companyId));
+      companyName = cSnap.exists() ? cSnap.data().name : 'Empresa';
+    }
+    document.getElementById('company-name-header').textContent = companyName || 'Empresa';
+
+    // Show app
+    document.getElementById('auth-overlay').style.display = 'none';
+    document.getElementById('app').style.display = 'flex';
+
+    initMap();
+    startRealtime();
+    loadDriversForSelect();
+  });
+
+  // ── Init Google Map ────────────────────────────────────────
+  function initMap() {
+    // Default center: São Paulo
+    map = new google.maps.Map(document.getElementById('map'), {
+      center: { lat: -23.5505, lng: -46.6333 },
+      zoom: 11,
+      mapTypeControl: false,
+      streetViewControl: false,
+      fullscreenControl: false,
+      styles: [
+        { featureType: 'poi', elementType: 'labels', stylers: [{ visibility: 'off' }] },
+        { featureType: 'transit', elementType: 'labels', stylers: [{ visibility: 'off' }] },
+      ],
+    });
+  }
+
+  // ── Real-time driver locations ─────────────────────────────
+  function startRealtime() {
+    if (!companyId) {
+      // Listen to all locations if no companyId (shouldn't happen)
+      return;
+    }
+    const q = query(
+      collection(db, 'driverLocations'),
+      where('companyId', '==', companyId)
+    );
+    unsubLocations = onSnapshot(q, snap => {
+      snap.forEach(d => {
+        const data = { id: d.id, ...d.data() };
+        driverData[d.id] = data;
+        updateMarker(data);
+      });
+      // Remove stale markers
+      Object.keys(markers).forEach(id => {
+        if (!driverData[id]) {
+          markers[id].setMap(null);
+          delete markers[id];
+        }
+      });
+      renderDriverList();
+      updateOnlineCount();
+    });
+  }
+
+  // ── Create / update map marker ─────────────────────────────
+  function updateMarker(data) {
+    const pos = { lat: data.latitude, lng: data.longitude };
+    if (!data.latitude || !data.longitude) return;
+
+    if (markers[data.driverId || data.id]) {
+      markers[data.driverId || data.id].setPosition(pos);
+    } else {
+      const dId   = data.driverId || data.id;
+      const label = (data.driverName || '?')[0].toUpperCase();
+      const color = colorFor(data.driverName || '?');
+
+      const icon = {
+        url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(`
+          <svg xmlns="http://www.w3.org/2000/svg" width="36" height="44" viewBox="0 0 36 44">
+            <ellipse cx="18" cy="42" rx="8" ry="2" fill="rgba(0,0,0,.2)"/>
+            <path d="M18 0C8.06 0 0 8.06 0 18c0 13.5 18 26 18 26S36 31.5 36 18C36 8.06 27.94 0 18 0z"
+                  fill="${color}"/>
+            <text x="18" y="22" font-family="Inter,Arial" font-size="13" font-weight="700"
+                  fill="white" text-anchor="middle">${label}</text>
+          </svg>`)}`,
+        scaledSize: new google.maps.Size(36, 44),
+        anchor:     new google.maps.Point(18, 44),
+      };
+
+      const marker = new google.maps.Marker({ position: pos, map, icon, title: data.driverName });
+      marker.addListener('click', () => showDriverPanel(dId));
+      markers[dId] = marker;
+    }
+  }
+
+  // ── Render driver sidebar list ─────────────────────────────
+  let searchTerm = '';
+  function renderDriverList() {
+    const list    = document.getElementById('driver-list');
+    const drivers = Object.values(driverData);
+    const filtered = searchTerm
+      ? drivers.filter(d => (d.driverName || '').toLowerCase().includes(searchTerm))
+      : drivers;
+
+    if (filtered.length === 0) {
+      list.innerHTML = `<div class="no-drivers">${
+        drivers.length === 0
+          ? 'Aguardando localização dos motoristas…'
+          : 'Nenhum motorista encontrado.'
+      }</div>`;
+      return;
+    }
+
+    // Sort: online/delivering first
+    filtered.sort((a, b) => {
+      const order = { delivering: 0, online: 1, offline: 2 };
+      return (order[a.status] ?? 2) - (order[b.status] ?? 2);
+    });
+
+    list.innerHTML = filtered.map(d => {
+      const dId     = d.driverId || d.id;
+      const name    = d.driverName || 'Motorista';
+      const status  = d.status || 'offline';
+      const color   = colorFor(name);
+      const initial = name[0].toUpperCase();
+      const statusText = { online: 'Online', offline: 'Offline', delivering: 'Entregando' }[status] || status;
+      const updated = d.updatedAt ? timeAgo(d.updatedAt.toDate ? d.updatedAt.toDate() : new Date(d.updatedAt)) : '';
+      const isSelected = selectedDriver === dId;
+
+      return `
+      <div class="driver-card ${isSelected ? 'selected' : ''}"
+           onclick="focusDriver('${dId}')" id="dc-${dId}">
+        <div class="driver-avatar" style="background:${color}">
+          ${initial}
+          <div class="status-dot ${status}"></div>
+        </div>
+        <div class="driver-info">
+          <div class="driver-name">${name}</div>
+          <div class="driver-status-text">${statusText}</div>
+          ${updated ? `<div class="driver-updated">${updated}</div>` : ''}
+        </div>
+        <button class="driver-dispatch-btn" onclick="event.stopPropagation();openDispatchModal('${dId}')">
+          CSV
+        </button>
+      </div>`;
+    }).join('');
+  }
+
+  window.filterDrivers = function() {
+    searchTerm = document.getElementById('driver-search').value.toLowerCase();
+    renderDriverList();
+  };
+
+  function updateOnlineCount() {
+    const count = Object.values(driverData).filter(d => d.status !== 'offline').length;
+    document.getElementById('online-count').textContent = count;
+  }
+
+  // ── Focus driver on map ────────────────────────────────────
+  window.focusDriver = function(dId) {
+    selectedDriver = dId;
+    renderDriverList();
+    const d = driverData[dId];
+    if (d && d.latitude) {
+      map.panTo({ lat: d.latitude, lng: d.longitude });
+      map.setZoom(15);
+    }
+    showDriverPanel(dId);
+  };
+
+  function showDriverPanel(dId) {
+    const d = driverData[dId];
+    if (!d) return;
+    selectedDriver = dId;
+    document.getElementById('dp-name').textContent     = d.driverName || 'Motorista';
+    document.getElementById('dp-coords').textContent   = `${(d.latitude||0).toFixed(5)}, ${(d.longitude||0).toFixed(5)}`;
+    document.getElementById('dp-updated').textContent  = d.updatedAt
+      ? 'Atualizado ' + timeAgo(d.updatedAt.toDate ? d.updatedAt.toDate() : new Date(d.updatedAt))
+      : '';
+    document.getElementById('driver-panel').classList.add('visible');
+  }
+
+  window.closeDriverPanel = function() {
+    document.getElementById('driver-panel').classList.remove('visible');
+    selectedDriver = null;
+    renderDriverList();
+  };
+
+  window.dispatchToSelected = function() {
+    if (selectedDriver) openDispatchModal(selectedDriver);
+  };
+
+  // ── Dispatch modal ─────────────────────────────────────────
+  window.openDispatchModal = function(driverId) {
+    const sel = document.getElementById('dispatch-driver-select');
+    if (driverId && sel.querySelector(`option[value="${driverId}"]`)) {
+      sel.value = driverId;
+    }
+    document.getElementById('dispatch-csv').value = '';
+    document.getElementById('import-progress').classList.remove('visible');
+    document.getElementById('dispatch-btn').disabled = false;
+    document.getElementById('dispatch-btn').textContent = 'Enviar Rota';
+    document.getElementById('dispatch-modal').classList.add('open');
+  };
+
+  window.closeModal = function(id) {
+    document.getElementById(id).classList.remove('open');
+  };
+
+  async function loadDriversForSelect() {
+    // Load drivers associated with this company
+    const sel = document.getElementById('dispatch-driver-select');
+    if (!companyId) return;
+    try {
+      const q    = query(collection(db, 'users'), where('role', '==', 'driver'));
+      const snap = await getDocs(q);
+      snap.forEach(d => {
+        const data = d.data();
+        // Include if driver is in this company
+        if (Array.isArray(data.companies) && data.companies.includes(companyId)) {
+          const opt = document.createElement('option');
+          opt.value       = d.id;
+          opt.textContent = data.name || data.email || d.id;
+          sel.appendChild(opt);
+        }
+      });
+    } catch (e) {
+      console.warn('Could not load drivers list:', e);
+    }
+  }
+
+  // ── Parse CSV ──────────────────────────────────────────────
+  function parseCSV(raw) {
+    const lines = raw.trim().split('\n').map(l => l.trim()).filter(Boolean);
+    if (lines.length < 2) return [];
+    const header = lines[0].split(',').map(h => h.trim().toLowerCase());
+    const idx = {
+      seq:          header.indexOf('seq'),
+      logradouro:   header.indexOf('logradouro'),
+      numero:       header.indexOf('numero'),
+      complemento:  header.indexOf('complemento'),
+      cidade:       header.indexOf('cidade'),
+    };
+    return lines.slice(1).map(line => {
+      const cols = line.split(',').map(c => c.trim());
+      return {
+        seq:         idx.seq >= 0         ? parseInt(cols[idx.seq]||'0')  : 0,
+        logradouro:  idx.logradouro >= 0  ? cols[idx.logradouro] || ''   : '',
+        numero:      idx.numero >= 0      ? cols[idx.numero] || ''        : '',
+        complemento: idx.complemento >= 0 ? cols[idx.complemento] || ''  : '',
+        cidade:      idx.cidade >= 0      ? cols[idx.cidade] || ''        : '',
+      };
+    }).filter(r => r.logradouro);
+  }
+
+  // ── Geocode address ────────────────────────────────────────
+  async function geocode(address) {
+    const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${MAPS_KEY}&region=br&language=pt-BR`;
+    const res  = await fetch(url);
+    const json = await res.json();
+    if (json.status === 'OK' && json.results.length > 0) {
+      const loc = json.results[0].geometry.location;
+      return { latitude: loc.lat, longitude: loc.lng, formattedAddress: json.results[0].formatted_address };
+    }
+    return null;
+  }
+
+  let dispatchCancelled = false;
+
+  window.handleDispatch = async function() {
+    const driverId = document.getElementById('dispatch-driver-select').value;
+    const csvText  = document.getElementById('dispatch-csv').value.trim();
+
+    if (!driverId) { alert('Selecione um motorista.'); return; }
+    if (!csvText)  { alert('Cole a lista de endereços.'); return; }
+
+    const rows = parseCSV(csvText);
+    if (rows.length === 0) { alert('Nenhum endereço encontrado. Verifique o formato do CSV.'); return; }
+
+    const btn = document.getElementById('dispatch-btn');
+    btn.disabled    = true;
+    btn.textContent = 'Geocodificando…';
+    dispatchCancelled = false;
+
+    const progressWrap = document.getElementById('import-progress');
+    const progressFill = document.getElementById('progress-fill');
+    const progressText = document.getElementById('progress-text');
+    progressWrap.classList.add('visible');
+
+    const waypoints = [];
+    for (let i = 0; i < rows.length; i++) {
+      if (dispatchCancelled) break;
+      const row     = rows[i];
+      const address = `${row.logradouro}, ${row.numero}, ${row.cidade}, Brasil`;
+      const display = `${row.logradouro}, ${row.numero}${row.complemento ? ' ' + row.complemento : ''}, ${row.cidade}`;
+
+      const pct = Math.round(((i + 1) / rows.length) * 100);
+      progressFill.style.width = pct + '%';
+      progressText.textContent = `Geocodificando ${i + 1}/${rows.length}: ${row.logradouro}`;
+
+      const geo = await geocode(address);
+      if (geo) {
+        waypoints.push({
+          seq:              row.seq || i + 1,
+          logradouro:       row.logradouro,
+          numero:           row.numero,
+          complemento:      row.complemento,
+          cidade:           row.cidade,
+          displayAddress:   display,
+          formattedAddress: geo.formattedAddress,
+          latitude:         geo.latitude,
+          longitude:        geo.longitude,
+          status:           'pending',
+          deliveryIndex:    i,
+        });
+      }
+      await new Promise(resolve => setTimeout(resolve, 80));
+    }
+
+    if (dispatchCancelled) {
+      progressWrap.classList.remove('visible');
+      btn.disabled    = false;
+      btn.textContent = 'Enviar Rota';
+      return;
+    }
+
+    if (waypoints.length === 0) {
+      alert('Nenhum endereço pôde ser geocodificado. Verifique os dados.');
+      progressWrap.classList.remove('visible');
+      btn.disabled    = false;
+      btn.textContent = 'Enviar Rota';
+      return;
+    }
+
+    progressText.textContent = 'Salvando no Firestore…';
+
+    try {
+      await addDoc(collection(db, 'routes'), {
+        driverId:    driverId,
+        companyId:   companyId,
+        status:      'pending',
+        waypoints:   waypoints,
+        totalStops:  waypoints.length,
+        createdAt:   serverTimestamp(),
+        dispatchedBy: 'web_dashboard',
+      });
+
+      progressFill.style.width = '100%';
+      progressText.textContent = `✓ ${waypoints.length} endereços enviados com sucesso!`;
+      btn.textContent = '✓ Enviado!';
+
+      setTimeout(() => {
+        closeModal('dispatch-modal');
+        progressWrap.classList.remove('visible');
+        btn.disabled    = false;
+        btn.textContent = 'Enviar Rota';
+      }, 2000);
+    } catch (err) {
+      alert('Erro ao salvar rota: ' + err.message);
+      progressWrap.classList.remove('visible');
+      btn.disabled    = false;
+      btn.textContent = 'Enviar Rota';
+    }
+  };
+
+  // ── Logout ─────────────────────────────────────────────────
+  window.handleLogout = async function() {
+    await signOut(auth);
+    window.location.href = 'gestor.html';
+  };
+
+  // ── Time ago helper ────────────────────────────────────────
+  function timeAgo(date) {
+    const diff = Math.floor((Date.now() - date.getTime()) / 1000);
+    if (diff < 60)   return `há ${diff}s`;
+    if (diff < 3600) return `há ${Math.floor(diff/60)}min`;
+    if (diff < 86400) return `há ${Math.floor(diff/3600)}h`;
+    return `há ${Math.floor(diff/86400)}d`;
+  }
+</script>
+
+</body>
+</html>
