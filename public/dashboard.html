@@ -762,14 +762,14 @@
         <span class="csv-format-hint">Cole diretamente da planilha</span>
       </div>
       <textarea class="csv-textarea" id="dispatch-csv"
-                placeholder="seq,logradouro,numero,complemento,cidade
-1,Rua das Flores,100,,São Paulo
-2,Av Paulista,1578,Apto 42,São Paulo
-3,Rua Augusta,200,,São Paulo"></textarea>
+                placeholder="seq,logradouro,numero,complemento,cep,cidade
+1,Rua das Flores,100,,01432-010,São Paulo
+2,Av Paulista,1578,Apto 42,01310-100,São Paulo
+3,Rua Augusta,200,,01305-100,São Paulo"></textarea>
 
       <div class="csv-hint">
         📋 Colunas esperadas:<br>
-        seq · logradouro · numero · complemento · cidade
+        seq · logradouro · numero · complemento · <strong>cep</strong> · cidade
       </div>
 
       <div class="progress-wrap" id="import-progress">
@@ -1126,13 +1126,14 @@
 
     const header = hasHeader
       ? lines[0].split(',').map(h => h.trim().toLowerCase())
-      : ['seq', 'logradouro', 'numero', 'complemento', 'cidade'];
+      : ['seq', 'logradouro', 'numero', 'complemento', 'cep', 'cidade'];
 
     const idx = {
       seq:         header.indexOf('seq'),
       logradouro:  header.indexOf('logradouro'),
       numero:      header.indexOf('numero'),
       complemento: header.indexOf('complemento'),
+      cep:         header.indexOf('cep'),
       cidade:      header.indexOf('cidade'),
     };
 
@@ -1144,6 +1145,7 @@
         logradouro:  idx.logradouro >= 0  ? cols[idx.logradouro] || ''  : '',
         numero:      idx.numero >= 0      ? cols[idx.numero] || ''       : '',
         complemento: idx.complemento >= 0 ? cols[idx.complemento] || '' : '',
+        cep:         idx.cep >= 0         ? cols[idx.cep] || ''          : '',
         cidade:      idx.cidade >= 0      ? cols[idx.cidade] || ''       : '',
       };
     }).filter(r => r.logradouro);
@@ -1348,8 +1350,16 @@
     for (let i = 0; i < rows.length; i++) {
       if (dispatchCancelled) break;
       const row     = rows[i];
-      const address = `${row.logradouro}, ${row.numero}, ${row.cidade}, Brasil`;
-      const display = `${row.logradouro}, ${row.numero}${row.complemento ? ' ' + row.complemento : ''}, ${row.cidade}`;
+      // CEP makes geocoding unambiguous (e.g. "R. das Flores" exists in many cities)
+      const address = row.cep
+        ? `${row.logradouro}, ${row.numero}, ${row.cep}, ${row.cidade}, Brasil`
+        : `${row.logradouro}, ${row.numero}, ${row.cidade}, Brasil`;
+      const display = [
+        `${row.logradouro}, ${row.numero}`,
+        row.complemento || null,
+        row.cep         || null,
+        row.cidade,
+      ].filter(Boolean).join(', ');
 
       progressFill.style.width = Math.round(((i + 1) / rows.length) * 60) + '%';
       progressText.textContent = `Geocodificando ${i + 1}/${rows.length}: ${row.logradouro}`;
@@ -1361,6 +1371,7 @@
           logradouro:      row.logradouro,
           numero:          row.numero,
           complemento:     row.complemento,
+          cep:             row.cep,
           cidade:          row.cidade,
           displayAddress:  display,
           formattedAddress: geo.formattedAddress,
@@ -1402,6 +1413,7 @@
       logradouro:          wp.logradouro,
       numero:              wp.numero,
       complemento:         wp.complemento,
+      cep:                 wp.cep,
       cidade:              wp.cidade,
       displayAddress:      wp.displayAddress,
       formattedAddress:    wp.formattedAddress,
