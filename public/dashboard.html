@@ -1472,6 +1472,11 @@
   async function loadDriversGallery() {
     const grid = document.getElementById('gallery-grid');
     const sub  = document.getElementById('gallery-sub');
+
+    // Remember which accordions are open before re-render
+    const openIds = [...document.querySelectorAll('.dgc-body.open')]
+      .map(el => el.id.replace('acc-', ''));
+
     grid.innerHTML = '<div class="gallery-empty">Carregando…</div>';
 
     try {
@@ -1517,6 +1522,7 @@
       sub.textContent = `${driverList.length} motorista${driverList.length !== 1 ? 's' : ''} · ${totalStops} entrega${totalStops !== 1 ? 's' : ''} ativa${totalStops !== 1 ? 's' : ''}`;
 
       grid.innerHTML = driverList.map(driver => {
+
         const color = colorFor(driver.name);
         const initial = driver.name[0].toUpperCase();
         const statusText = { online: 'Online', offline: 'Offline', delivering: 'Entregando' }[driver.status] || driver.status;
@@ -1525,7 +1531,7 @@
 
         const routeRows = driver.routes.flatMap(route =>
           (route.waypoints || []).map(wp => `
-            <div class="delivery-item" id="di-${route.id}-${wp.waypointId}">
+            <div class="delivery-item" id="di-${route.id}-${wp.order}">
               <div class="delivery-order ${wp.status !== 'pending' ? (wp.status === 'recebido' ? 'done' : 'skip') : ''}">
                 ${wp.order || '?'}
               </div>
@@ -1537,7 +1543,7 @@
                 ${{ pending: 'Pendente', recebido: 'Entregue', recusado: 'Recusado', cancelado: 'Cancelado' }[wp.status] || 'Pendente'}
               </span>
               <button class="delivery-remove"
-                      onclick="removeWaypoint('${route.id}','${wp.waypointId}',event)"
+                      onclick="removeWaypoint('${route.id}','${wp.waypointId || ''}',${wp.order},event)"
                       title="Remover entrega">✕</button>
             </div>`)
         );
@@ -1563,6 +1569,14 @@
         </div>`;
       }).join('');
 
+      // Re-open accordions that were open before re-render
+      openIds.forEach(dId => {
+        const body = document.getElementById(`acc-${dId}`);
+        const chev = document.getElementById(`chev-${dId}`);
+        if (body) body.classList.add('open');
+        if (chev) chev.classList.add('open');
+      });
+
     } catch (e) {
       grid.innerHTML = `<div class="gallery-empty" style="color:red">Erro: ${e.message}</div>`;
     }
@@ -1585,11 +1599,11 @@
   };
 
   // ── Remove waypoint from route ─────────────────────────────
-  window.removeWaypoint = async function(routeId, waypointId, event) {
+  window.removeWaypoint = async function(routeId, waypointId, wpOrder, event) {
     event.stopPropagation();
     if (!confirm('Remover esta entrega da rota?')) return;
 
-    const itemEl = document.getElementById(`di-${routeId}-${waypointId}`);
+    const itemEl = document.getElementById(`di-${routeId}-${wpOrder}`);
     if (itemEl) itemEl.style.opacity = '0.4';
 
     try {
@@ -1597,9 +1611,16 @@
       const snap     = await getDoc(routeRef);
       if (!snap.exists()) { alert('Rota não encontrada.'); return; }
 
-      const waypoints = (snap.data().waypoints || [])
-        .filter(w => w.waypointId !== waypointId)
-        .map((w, i) => ({ ...w, order: i + 1 })); // re-number
+      const stored = snap.data().waypoints || [];
+
+      // Primary: filter by waypointId. Fallback: filter by order.
+      let filtered = stored.filter(w => w.waypointId !== waypointId);
+      if (filtered.length === stored.length) {
+        // waypointId didn't match — fall back to order field
+        filtered = stored.filter(w => w.order !== wpOrder);
+      }
+
+      const waypoints = filtered.map((w, i) => ({ ...w, order: i + 1 }));
 
       if (waypoints.length === 0) {
         await updateDoc(routeRef, { status: 'completed', waypoints: [] });
@@ -1607,7 +1628,7 @@
         await updateDoc(routeRef, { waypoints });
       }
 
-      loadDriversGallery();
+      await loadDriversGallery();
     } catch (e) {
       alert('Erro ao remover entrega: ' + e.message);
       if (itemEl) itemEl.style.opacity = '1';
