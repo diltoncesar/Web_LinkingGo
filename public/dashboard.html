@@ -631,6 +631,22 @@
       color: var(--gray-400);
       text-align: center;
     }
+
+    .dgc-btn-clear {
+      padding: 4px 10px;
+      font-size: .72rem;
+      font-weight: 700;
+      border-radius: 6px;
+      background: #FEF2F2;
+      color: var(--red);
+      border: none;
+      cursor: pointer;
+      font-family: 'Inter', sans-serif;
+      flex-shrink: 0;
+      white-space: nowrap;
+      margin-right: 6px;
+    }
+    .dgc-btn-clear:hover { background: #FEE2E2; }
     .gallery-empty {
       text-align: center;
       padding: 60px 20px;
@@ -1571,6 +1587,9 @@
             <button class="driver-dispatch-btn" style="margin-right:6px"
                     onclick="event.stopPropagation();viewDriverOnMap('${driver.id}')"
                     title="Ver rota no mapa">🗺</button>
+            ${stopCount > 0 ? `<button class="dgc-btn-clear"
+                    onclick="event.stopPropagation();clearDriverRoutes('${driver.id}','${driver.name.replace(/'/g, '\\\'')}')"
+                    title="Remover todas as entregas">🗑 Limpar</button>` : ''}
             <span class="dgc-chevron" id="chev-${driver.id}">▼</span>
           </div>
           <div class="dgc-body" id="acc-${driver.id}">
@@ -1644,6 +1663,31 @@
     } catch (e) {
       alert('Erro ao remover entrega: ' + e.message);
       if (itemEl) itemEl.style.opacity = '1';
+    }
+  };
+
+  // ── Clear all routes for a driver ─────────────────────────
+  window.clearDriverRoutes = async function(driverId, driverName) {
+    if (!confirm(`Remover TODAS as entregas de ${driverName}?\n\nEsta ação não pode ser desfeita.`)) return;
+
+    try {
+      const snap = await getDocs(
+        query(collection(db, 'routes'), where('companyId', '==', companyId))
+      );
+
+      const updates = [];
+      snap.forEach(d => {
+        const r = d.data();
+        if (r.driverId === driverId && r.status !== 'completed') {
+          updates.push(updateDoc(doc(db, 'routes', d.id), { status: 'completed', waypoints: [] }));
+        }
+      });
+
+      if (updates.length === 0) return;
+      await Promise.all(updates);
+      await loadDriversGallery();
+    } catch (e) {
+      alert('Erro ao limpar entregas: ' + e.message);
     }
   };
 
