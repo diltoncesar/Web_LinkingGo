@@ -714,6 +714,7 @@
         <div class="dp-name" id="dp-name">–</div>
         <div class="dp-coords" id="dp-coords">–</div>
         <div class="dp-updated" id="dp-updated">–</div>
+        <div class="dp-route-info" id="dp-route-info" style="font-size:.75rem;color:var(--blue);margin-top:6px;min-height:16px"></div>
         <button class="btn-sm btn-blue" style="margin-top:10px;width:100%;font-size:.78rem"
                 onclick="dispatchToSelected()">Despachar CSV para este motorista</button>
       </div>
@@ -997,9 +998,10 @@
     const d = driverData[dId];
     if (d && d.latitude) {
       map.panTo({ lat: d.latitude, lng: d.longitude });
-      map.setZoom(15);
+      map.setZoom(13);
     }
     showDriverPanel(dId);
+    loadDriverRoute(dId);
   };
 
   function showDriverPanel(dId) {
@@ -1018,7 +1020,58 @@
     document.getElementById('driver-panel').classList.remove('visible');
     selectedDriver = null;
     renderDriverList();
+    clearRoutePreview();
   };
+
+  // ── Load and display driver's active route on map ──────────
+  async function loadDriverRoute(driverId) {
+    clearRoutePreview();
+    if (!companyId) return;
+    try {
+      // Query by companyId only (single-field index), filter by driverId client-side
+      const snap = await getDocs(
+        query(collection(db, 'routes'), where('companyId', '==', companyId))
+      );
+
+      // Pick the most recent active route for this driver
+      let activeRoute = null;
+      snap.forEach(d => {
+        const r = { id: d.id, ...d.data() };
+        if (r.driverId !== driverId || r.status === 'completed') return;
+        if (!activeRoute) { activeRoute = r; return; }
+        const ts  = r.createdAt?.seconds          ?? 0;
+        const cur = activeRoute.createdAt?.seconds ?? 0;
+        if (ts > cur) activeRoute = r;
+      });
+
+      if (!activeRoute || !activeRoute.waypoints?.length) {
+        document.getElementById('dp-route-info').textContent = 'Sem rota ativa.';
+        return;
+      }
+
+      const pending = activeRoute.waypoints.filter(w => w.status === 'pending');
+      if (pending.length === 0) {
+        document.getElementById('dp-route-info').textContent = 'Todas as entregas concluídas.';
+        return;
+      }
+
+      const dLoc  = driverData[driverId];
+      const start = (dLoc?.latitude && dLoc?.longitude)
+        ? { latitude: dLoc.latitude,   longitude: dLoc.longitude }
+        : { latitude: pending[0].latitude, longitude: pending[0].longitude };
+
+      document.getElementById('dp-route-info').textContent =
+        `${pending.length} parada${pending.length !== 1 ? 's' : ''} pendente${pending.length !== 1 ? 's' : ''} · desenhando rota…`;
+
+      await showRoutePreview(start, pending);
+
+      document.getElementById('dp-route-info').textContent =
+        `${pending.length} parada${pending.length !== 1 ? 's' : ''} pendente${pending.length !== 1 ? 's' : ''}`;
+    } catch (e) {
+      console.warn('[loadDriverRoute]', e.message);
+      document.getElementById('dp-route-info').textContent = '';
+    }
+  }
 
   window.dispatchToSelected = function() {
     if (selectedDriver) openDispatchModal(selectedDriver);
@@ -1497,6 +1550,9 @@
               <div class="dgc-name">${driver.name}</div>
               <div class="dgc-meta">${statusText} · ${stopCount} entrega${stopCount !== 1 ? 's' : ''} pendente${stopCount !== 1 ? 's' : ''}</div>
             </div>
+            <button class="driver-dispatch-btn" style="margin-right:6px"
+                    onclick="event.stopPropagation();viewDriverOnMap('${driver.id}')"
+                    title="Ver rota no mapa">🗺</button>
             <span class="dgc-chevron" id="chev-${driver.id}">▼</span>
           </div>
           <div class="dgc-body" id="acc-${driver.id}">
@@ -1519,6 +1575,13 @@
     const isOpen = body.classList.contains('open');
     body.classList.toggle('open', !isOpen);
     chev.classList.toggle('open', !isOpen);
+  };
+
+  // ── View driver route on map (called from gallery) ─────────
+  window.viewDriverOnMap = function(driverId) {
+    switchView('map');
+    // Small delay to let the map become visible before panning/drawing
+    setTimeout(() => focusDriver(driverId), 150);
   };
 
   // ── Remove waypoint from route ─────────────────────────────
