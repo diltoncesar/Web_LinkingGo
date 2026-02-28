@@ -647,6 +647,62 @@
       margin-right: 6px;
     }
     .dgc-btn-clear:hover { background: #FEE2E2; }
+
+    .dgc-btn-add {
+      padding: 4px 10px;
+      font-size: .72rem;
+      font-weight: 700;
+      border-radius: 6px;
+      background: var(--blue-light);
+      color: var(--blue);
+      border: none;
+      cursor: pointer;
+      font-family: 'Inter', sans-serif;
+      flex-shrink: 0;
+      white-space: nowrap;
+      margin-right: 6px;
+    }
+    .dgc-btn-add:hover { background: var(--blue-mid); }
+
+    /* ── Add stop modal form ── */
+    .add-form-row {
+      display: flex;
+      gap: 12px;
+    }
+    .add-form-group {
+      display: flex;
+      flex-direction: column;
+      margin-bottom: 14px;
+      flex: 1;
+    }
+    .add-form-group.sm { flex: 0 0 130px; }
+    .add-form-group label {
+      font-size: .78rem;
+      font-weight: 600;
+      color: var(--gray-600);
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      margin-bottom: 5px;
+    }
+    .add-form-group input {
+      padding: 9px 12px;
+      border: 1.5px solid var(--gray-200);
+      border-radius: 8px;
+      font-size: .88rem;
+      font-family: 'Inter', sans-serif;
+      color: var(--gray-900);
+      background: var(--gray-100);
+      outline: none;
+    }
+    .add-form-group input:focus { border-color: var(--blue); background: var(--white); }
+    .add-stop-feedback {
+      font-size: .82rem;
+      color: var(--blue);
+      min-height: 20px;
+      margin-top: 4px;
+    }
+    .add-stop-feedback.error { color: var(--red); }
+    .add-stop-feedback.success { color: var(--green); }
     .gallery-empty {
       text-align: center;
       padding: 60px 20px;
@@ -799,6 +855,55 @@
       <button class="btn-sm btn-ghost-w" style="color:var(--gray-700);background:var(--gray-100)"
               onclick="closeModal('dispatch-modal')">Cancelar</button>
       <button class="btn-sm btn-blue" id="dispatch-btn" onclick="handleDispatch()">Enviar Rota</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     ADD STOP MODAL
+══════════════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="add-stop-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <h3>Adicionar Parada</h3>
+        <p id="add-stop-driver-label">Motorista</p>
+      </div>
+      <button class="modal-close" onclick="closeModal('add-stop-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="add-form-row">
+        <div class="add-form-group">
+          <label>Logradouro *</label>
+          <input type="text" id="add-logradouro" placeholder="Rua das Flores" />
+        </div>
+        <div class="add-form-group sm">
+          <label>Número *</label>
+          <input type="text" id="add-numero" placeholder="123" />
+        </div>
+      </div>
+      <div class="add-form-row">
+        <div class="add-form-group">
+          <label>Complemento</label>
+          <input type="text" id="add-complemento" placeholder="Apto 4" />
+        </div>
+        <div class="add-form-group sm">
+          <label>CEP</label>
+          <input type="text" id="add-cep" placeholder="01432-010" />
+        </div>
+      </div>
+      <div class="add-form-group">
+        <label>Cidade *</label>
+        <input type="text" id="add-cidade" placeholder="São Paulo" />
+      </div>
+      <div class="add-stop-feedback" id="add-stop-feedback"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-sm" style="background:var(--gray-100);color:var(--gray-700)"
+              onclick="closeModal('add-stop-modal')">Cancelar</button>
+      <button class="btn-sm btn-blue" id="add-stop-btn" onclick="handleAddStop()">
+        Adicionar Parada
+      </button>
     </div>
   </div>
 </div>
@@ -1587,6 +1692,9 @@
             <button class="driver-dispatch-btn" style="margin-right:6px"
                     onclick="event.stopPropagation();viewDriverOnMap('${driver.id}')"
                     title="Ver rota no mapa">🗺</button>
+            <button class="dgc-btn-add"
+                    onclick="event.stopPropagation();openAddStopModal('${driver.id}','${driver.name.replace(/'/g, '\\\'')}')"
+                    title="Adicionar parada">➕ Parada</button>
             ${stopCount > 0 ? `<button class="dgc-btn-clear"
                     onclick="event.stopPropagation();clearDriverRoutes('${driver.id}','${driver.name.replace(/'/g, '\\\'')}')"
                     title="Remover todas as entregas">🗑 Limpar</button>` : ''}
@@ -1663,6 +1771,172 @@
     } catch (e) {
       alert('Erro ao remover entrega: ' + e.message);
       if (itemEl) itemEl.style.opacity = '1';
+    }
+  };
+
+  // ── Add single stop to driver's active route ───────────────
+  let addStopDriverId   = null;
+  let addStopDriverName = '';
+
+  window.openAddStopModal = function(driverId, driverName) {
+    addStopDriverId   = driverId;
+    addStopDriverName = driverName;
+    document.getElementById('add-stop-driver-label').textContent = driverName;
+    // Clear fields
+    ['add-logradouro','add-numero','add-complemento','add-cep','add-cidade']
+      .forEach(id => document.getElementById(id).value = '');
+    const fb = document.getElementById('add-stop-feedback');
+    fb.textContent = '';
+    fb.className   = 'add-stop-feedback';
+    document.getElementById('add-stop-btn').disabled    = false;
+    document.getElementById('add-stop-btn').textContent = 'Adicionar Parada';
+    document.getElementById('add-stop-modal').classList.add('open');
+    // Focus first field
+    setTimeout(() => document.getElementById('add-logradouro').focus(), 200);
+  };
+
+  // Best-insertion algorithm:
+  // Finds the position (0 = before first stop, n = after last stop) that
+  // minimises the extra distance added to the existing ordered route.
+  // Uses the driver's current location as the route start point.
+  function findBestInsertionIndex(orderedWaypoints, newPoint, startPoint) {
+    if (orderedWaypoints.length === 0) return 0;
+
+    // Build sequence: start → wp[0] → wp[1] → … → wp[n-1]
+    const seq = [startPoint, ...orderedWaypoints];
+    let bestIdx  = orderedWaypoints.length; // default: append
+    let bestCost = Infinity;
+
+    for (let i = 0; i <= orderedWaypoints.length; i++) {
+      const prev = seq[i];
+      const next = i < orderedWaypoints.length ? orderedWaypoints[i] : null;
+      // Extra distance if we insert newPoint between prev and next
+      const added = haversine(prev, newPoint) +
+                    (next ? haversine(newPoint, next) : 0) -
+                    (next ? haversine(prev, next)     : 0);
+      if (added < bestCost) { bestCost = added; bestIdx = i; }
+    }
+    return bestIdx;
+  }
+
+  window.handleAddStop = async function() {
+    const logradouro  = document.getElementById('add-logradouro').value.trim();
+    const numero      = document.getElementById('add-numero').value.trim();
+    const complemento = document.getElementById('add-complemento').value.trim();
+    const cep         = document.getElementById('add-cep').value.trim();
+    const cidade      = document.getElementById('add-cidade').value.trim();
+
+    if (!logradouro || !numero || !cidade) {
+      const fb = document.getElementById('add-stop-feedback');
+      fb.textContent = 'Preencha logradouro, número e cidade.';
+      fb.className   = 'add-stop-feedback error';
+      return;
+    }
+
+    const btn = document.getElementById('add-stop-btn');
+    btn.disabled    = true;
+    btn.textContent = 'Geocodificando…';
+    const fb = document.getElementById('add-stop-feedback');
+    fb.textContent = 'Buscando coordenadas…';
+    fb.className   = 'add-stop-feedback';
+
+    try {
+      // 1. Geocode
+      const geoQuery = cep
+        ? `${logradouro}, ${numero}, ${cep}, ${cidade}, Brasil`
+        : `${logradouro}, ${numero}, ${cidade}, Brasil`;
+      const geo = await geocode(geoQuery);
+      if (!geo) throw new Error('Endereço não encontrado. Verifique e tente novamente.');
+
+      const displayAddress = [
+        `${logradouro}, ${numero}`,
+        complemento || null,
+        cep         || null,
+        cidade,
+      ].filter(Boolean).join(', ');
+
+      const newPoint = { latitude: geo.latitude, longitude: geo.longitude };
+
+      // 2. Find driver's active route
+      fb.textContent = 'Localizando rota ativa…';
+      const snap = await getDocs(
+        query(collection(db, 'routes'), where('companyId', '==', companyId))
+      );
+
+      let activeRoute   = null;
+      let activeRouteRef = null;
+      snap.forEach(d => {
+        const r = d.data();
+        if (r.driverId !== addStopDriverId || r.status === 'completed') return;
+        if (!activeRoute) { activeRoute = r; activeRouteRef = doc(db, 'routes', d.id); return; }
+        const ts  = r.createdAt?.seconds          ?? 0;
+        const cur = activeRoute.createdAt?.seconds ?? 0;
+        if (ts > cur) { activeRoute = r; activeRouteRef = doc(db, 'routes', d.id); }
+      });
+
+      // 3. Determine insertion position using best-insertion algorithm
+      fb.textContent = 'Calculando melhor posição na rota…';
+      const pending = activeRoute
+        ? (activeRoute.waypoints || []).filter(w => w.status === 'pending')
+        : [];
+
+      const dLoc     = driverData[addStopDriverId];
+      const startPt  = (dLoc?.latitude && dLoc?.longitude)
+        ? { latitude: dLoc.latitude, longitude: dLoc.longitude }
+        : (pending.length > 0 ? pending[0] : newPoint);
+
+      const insertAt = findBestInsertionIndex(pending, newPoint, startPt);
+
+      // Build new waypoint
+      const newWp = {
+        waypointId:      'WP' + Date.now().toString(36).toUpperCase(),
+        logradouro, numero, complemento, cep, cidade,
+        displayAddress,
+        formattedAddress: geo.formattedAddress,
+        latitude:        geo.latitude,
+        longitude:       geo.longitude,
+        status:          'pending',
+        order:           0, // will be set after splice
+      };
+
+      // Insert and re-number
+      const updated = [...pending];
+      updated.splice(insertAt, 0, newWp);
+      const reordered = updated.map((w, i) => ({ ...w, order: i + 1 }));
+
+      // 4. Save to Firestore
+      fb.textContent = 'Salvando…';
+      if (activeRoute && activeRouteRef) {
+        // Merge with completed/in-progress waypoints and re-number
+        const others = (activeRoute.waypoints || []).filter(w => w.status !== 'pending');
+        await updateDoc(activeRouteRef, { waypoints: [...reordered, ...others] });
+      } else {
+        // No active route — create a new one for this driver
+        await addDoc(collection(db, 'routes'), {
+          driverId:     addStopDriverId,
+          companyId,
+          status:       'pending',
+          waypoints:    reordered,
+          totalStops:   1,
+          createdAt:    serverTimestamp(),
+          dispatchedBy: 'web_dashboard_manual',
+        });
+      }
+
+      fb.textContent = `✓ Parada inserida na posição ${insertAt + 1} da rota.`;
+      fb.className   = 'add-stop-feedback success';
+      btn.textContent = '✓ Adicionado!';
+
+      await loadDriversGallery();
+
+      setTimeout(() => closeModal('add-stop-modal'), 1800);
+
+    } catch (e) {
+      const fb = document.getElementById('add-stop-feedback');
+      fb.textContent = e.message;
+      fb.className   = 'add-stop-feedback error';
+      btn.disabled    = false;
+      btn.textContent = 'Adicionar Parada';
     }
   };
 
