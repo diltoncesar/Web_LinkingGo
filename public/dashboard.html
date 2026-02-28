@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <!-- Google Maps -->
-  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDnStmxzdXdzIwwqzhiB1tPHOdACOd7MeE&libraries=places&loading=async" async defer></script>
+  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCZTpEveO0nJxI1xeIxKnMrIMQqIDnJSlE&libraries=places&loading=async" async defer></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
@@ -464,6 +464,179 @@
       cursor: pointer;
       color: var(--gray-600);
     }
+
+    /* ── View tabs ── */
+    .view-tabs {
+      display: flex;
+      background: var(--gray-900);
+      border-bottom: 1px solid rgba(255,255,255,.08);
+      flex-shrink: 0;
+    }
+    .view-tab {
+      padding: 10px 22px;
+      font-size: .82rem;
+      font-weight: 600;
+      font-family: 'Inter', sans-serif;
+      color: rgba(255,255,255,.45);
+      background: none;
+      border: none;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all .2s;
+    }
+    .view-tab.active { color: var(--white); border-bottom-color: var(--blue); }
+    .view-tab:hover  { color: rgba(255,255,255,.75); }
+
+    /* ── Drivers gallery view ── */
+    #view-drivers {
+      flex: 1;
+      overflow-y: auto;
+      padding: 28px 28px 40px;
+      background: var(--gray-100);
+    }
+    .gallery-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 22px;
+    }
+    .gallery-title { font-size: 1.25rem; font-weight: 800; color: var(--gray-900); }
+    .gallery-sub   { font-size: .825rem; color: var(--gray-500); margin-top: 2px; }
+
+    .gallery-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+      gap: 18px;
+    }
+
+    /* ── Driver gallery card ── */
+    .dgc {
+      background: var(--white);
+      border-radius: 16px;
+      box-shadow: 0 2px 12px rgba(0,0,0,.06);
+      overflow: hidden;
+    }
+    .dgc-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 16px 18px;
+      cursor: pointer;
+      user-select: none;
+      transition: background .15s;
+    }
+    .dgc-header:hover { background: var(--gray-100); }
+    .dgc-avatar {
+      width: 44px; height: 44px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 800; font-size: 1rem; color: var(--white);
+      flex-shrink: 0;
+    }
+    .dgc-info { flex: 1; min-width: 0; }
+    .dgc-name { font-weight: 700; font-size: .925rem; color: var(--gray-900); }
+    .dgc-meta { font-size: .775rem; color: var(--gray-500); margin-top: 2px; }
+    .dgc-chevron {
+      font-size: .7rem;
+      color: var(--gray-400);
+      transition: transform .25s;
+      flex-shrink: 0;
+    }
+    .dgc-chevron.open { transform: rotate(180deg); }
+
+    /* ── Accordion body ── */
+    .dgc-body {
+      border-top: 1px solid var(--gray-100);
+      display: none;
+      max-height: 420px;
+      overflow-y: auto;
+    }
+    .dgc-body.open { display: block; }
+
+    .dgc-route-label {
+      padding: 8px 18px 4px;
+      font-size: .7rem;
+      font-weight: 700;
+      color: var(--gray-400);
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      background: var(--gray-100);
+    }
+
+    /* ── Delivery item ── */
+    .delivery-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 16px;
+      border-bottom: 1px solid var(--gray-100);
+      transition: background .12s;
+    }
+    .delivery-item:hover { background: #FAFAFA; }
+    .delivery-item:last-child { border-bottom: none; }
+
+    .delivery-order {
+      width: 26px; height: 26px;
+      border-radius: 50%;
+      background: var(--blue);
+      color: var(--white);
+      font-size: .72rem;
+      font-weight: 800;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .delivery-order.done  { background: var(--green); }
+    .delivery-order.skip  { background: var(--gray-300); }
+
+    .delivery-info { flex: 1; min-width: 0; }
+    .delivery-address {
+      font-size: .85rem;
+      font-weight: 600;
+      color: var(--gray-900);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .delivery-city { font-size: .75rem; color: var(--gray-500); margin-top: 1px; }
+
+    .delivery-status {
+      font-size: .7rem;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 999px;
+      flex-shrink: 0;
+    }
+    .ds-pending   { background: #EEF2FF; color: #4F46E5; }
+    .ds-recebido  { background: var(--green-light); color: var(--green); }
+    .ds-recusado  { background: #FEF2F2; color: var(--red); }
+    .ds-cancelado { background: var(--gray-100); color: var(--gray-500); }
+
+    .delivery-remove {
+      width: 26px; height: 26px;
+      border-radius: 50%;
+      background: #FEF2F2;
+      color: var(--red);
+      border: none;
+      font-size: .85rem;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      transition: background .15s;
+    }
+    .delivery-remove:hover { background: #FEE2E2; }
+
+    .dgc-empty {
+      padding: 24px 18px;
+      font-size: .85rem;
+      color: var(--gray-400);
+      text-align: center;
+    }
+    .gallery-empty {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--gray-500);
+      font-size: .9rem;
+    }
   </style>
 </head>
 <body>
@@ -501,6 +674,14 @@
     </div>
   </header>
 
+  <!-- Tab bar -->
+  <div class="view-tabs">
+    <button class="view-tab active" id="tab-map"     onclick="switchView('map')">🗺 Mapa em Tempo Real</button>
+    <button class="view-tab"        id="tab-drivers" onclick="switchView('drivers')">👥 Motoristas &amp; Entregas</button>
+  </div>
+
+  <!-- ── View: Map ── -->
+  <div id="view-map" style="display:flex;flex:1;overflow:hidden">
   <!-- Main -->
   <div class="main-layout">
 
@@ -539,6 +720,22 @@
     </div>
 
   </div>
+  </div> <!-- /view-map -->
+
+  <!-- ── View: Drivers gallery ── -->
+  <div id="view-drivers" style="display:none">
+    <div class="gallery-header">
+      <div>
+        <div class="gallery-title">Motoristas &amp; Entregas</div>
+        <div class="gallery-sub" id="gallery-sub">Carregando…</div>
+      </div>
+      <button class="btn-sm btn-blue" onclick="switchView('map');openDispatchModal(null)">+ Despachar CSV</button>
+    </div>
+    <div class="gallery-grid" id="gallery-grid">
+      <div class="gallery-empty">Carregando motoristas…</div>
+    </div>
+  </div>
+
 </div>
 
 <!-- ══════════════════════════════════════════════════════════
@@ -595,7 +792,7 @@
   import { getAuth, onAuthStateChanged, signOut }
     from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
   import { getFirestore, doc, getDoc, collection, query, where,
-           onSnapshot, orderBy, addDoc, serverTimestamp, getDocs }
+           onSnapshot, orderBy, addDoc, serverTimestamp, getDocs, updateDoc }
     from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
   const firebaseConfig = {
@@ -610,7 +807,7 @@
   const auth = getAuth(app);
   const db   = getFirestore(app);
 
-  const MAPS_KEY = 'AIzaSyDnStmxzdXdzIwwqzhiB1tPHOdACOd7MeE';
+  const MAPS_KEY = 'AIzaSyCZTpEveO0nJxI1xeIxKnMrIMQqIDnJSlE';
 
   let map           = null;
   let markers       = {};          // { driverId: google.maps.Marker }
@@ -845,21 +1042,18 @@
   };
 
   async function loadDriversForSelect() {
-    // Load drivers associated with this company
+    // Load drivers from driverLocations — same source as the map markers
     const sel = document.getElementById('dispatch-driver-select');
     if (!companyId) return;
     try {
-      const q    = query(collection(db, 'users'), where('role', '==', 'driver'));
+      const q    = query(collection(db, 'driverLocations'), where('companyId', '==', companyId));
       const snap = await getDocs(q);
       snap.forEach(d => {
         const data = d.data();
-        // Include if driver is in this company
-        if (Array.isArray(data.companies) && data.companies.includes(companyId)) {
-          const opt = document.createElement('option');
-          opt.value       = d.id;
-          opt.textContent = data.name || data.email || d.id;
-          sel.appendChild(opt);
-        }
+        const opt  = document.createElement('option');
+        opt.value       = data.driverId || d.id;
+        opt.textContent = data.driverName || data.driverId || d.id;
+        sel.appendChild(opt);
       });
     } catch (e) {
       console.warn('Could not load drivers list:', e);
@@ -867,25 +1061,37 @@
   }
 
   // ── Parse CSV ──────────────────────────────────────────────
+  // Accepts with or without header row.
+  // Column order (positional): seq, logradouro, numero, complemento, cidade
   function parseCSV(raw) {
     const lines = raw.trim().split('\n').map(l => l.trim()).filter(Boolean);
-    if (lines.length < 2) return [];
-    const header = lines[0].split(',').map(h => h.trim().toLowerCase());
+    if (lines.length === 0) return [];
+
+    // Detect header: first cell is non-numeric (e.g. "seq", "logradouro")
+    const firstCell = lines[0].split(',')[0].trim().toLowerCase();
+    const hasHeader = isNaN(parseInt(firstCell));
+
+    const header = hasHeader
+      ? lines[0].split(',').map(h => h.trim().toLowerCase())
+      : ['seq', 'logradouro', 'numero', 'complemento', 'cidade'];
+
     const idx = {
-      seq:          header.indexOf('seq'),
-      logradouro:   header.indexOf('logradouro'),
-      numero:       header.indexOf('numero'),
-      complemento:  header.indexOf('complemento'),
-      cidade:       header.indexOf('cidade'),
+      seq:         header.indexOf('seq'),
+      logradouro:  header.indexOf('logradouro'),
+      numero:      header.indexOf('numero'),
+      complemento: header.indexOf('complemento'),
+      cidade:      header.indexOf('cidade'),
     };
-    return lines.slice(1).map(line => {
+
+    const dataLines = hasHeader ? lines.slice(1) : lines;
+    return dataLines.map((line, i) => {
       const cols = line.split(',').map(c => c.trim());
       return {
-        seq:         idx.seq >= 0         ? parseInt(cols[idx.seq]||'0')  : 0,
-        logradouro:  idx.logradouro >= 0  ? cols[idx.logradouro] || ''   : '',
-        numero:      idx.numero >= 0      ? cols[idx.numero] || ''        : '',
-        complemento: idx.complemento >= 0 ? cols[idx.complemento] || ''  : '',
-        cidade:      idx.cidade >= 0      ? cols[idx.cidade] || ''        : '',
+        seq:         idx.seq >= 0         ? parseInt(cols[idx.seq] || String(i+1)) : i + 1,
+        logradouro:  idx.logradouro >= 0  ? cols[idx.logradouro] || ''  : '',
+        numero:      idx.numero >= 0      ? cols[idx.numero] || ''       : '',
+        complemento: idx.complemento >= 0 ? cols[idx.complemento] || '' : '',
+        cidade:      idx.cidade >= 0      ? cols[idx.cidade] || ''       : '',
       };
     }).filter(r => r.logradouro);
   }
@@ -900,6 +1106,166 @@
       return { latitude: loc.lat, longitude: loc.lng, formattedAddress: json.results[0].formatted_address };
     }
     return null;
+  }
+
+  // ── Route optimizer — Nearest Neighbor (Haversine) ─────────
+  // Same algorithm as the mobile app (RouteOptimizer.js)
+  function haversine(a, b) {
+    const R  = 6371;
+    const dL = (b.latitude  - a.latitude)  * Math.PI / 180;
+    const dG = (b.longitude - a.longitude) * Math.PI / 180;
+    const x  = Math.sin(dL/2)**2 +
+               Math.cos(a.latitude * Math.PI/180) *
+               Math.cos(b.latitude * Math.PI/180) *
+               Math.sin(dG/2)**2;
+    return R * 2 * Math.atan2(Math.sqrt(x), Math.sqrt(1-x));
+  }
+
+  function optimizeRoute(start, stops) {
+    const unvisited = [...stops];
+    const ordered   = [];
+    let current = start;
+    while (unvisited.length > 0) {
+      let nearestIdx = 0, nearestDist = Infinity;
+      for (let i = 0; i < unvisited.length; i++) {
+        const d = haversine(current, unvisited[i]);
+        if (d < nearestDist) { nearestDist = d; nearestIdx = i; }
+      }
+      const next = unvisited.splice(nearestIdx, 1)[0];
+      ordered.push({ ...next, distanceFromPrevious: Math.round(nearestDist * 100) / 100 });
+      current = next;
+    }
+    return ordered;
+  }
+
+  // ── Route preview — markers + road-following polyline ──────
+  let routePreviewMarkers  = [];
+  let routePreviewPolylines = [];
+
+  function clearRoutePreview() {
+    routePreviewMarkers.forEach(m => m.setMap(null));
+    routePreviewMarkers = [];
+    routePreviewPolylines.forEach(p => p.setMap(null));
+    routePreviewPolylines = [];
+  }
+
+  // Draw numbered stop markers at geocoded positions
+  function placeStopMarkers(start, optimized) {
+    // Driver start marker (green)
+    routePreviewMarkers.push(new google.maps.Marker({
+      position: { lat: start.latitude, lng: start.longitude },
+      map,
+      icon: {
+        path: google.maps.SymbolPath.CIRCLE,
+        scale: 11,
+        fillColor: '#16A34A',
+        fillOpacity: 1,
+        strokeColor: '#fff',
+        strokeWeight: 2,
+      },
+      title: 'Posição do motorista',
+      zIndex: 30,
+    }));
+
+    // Numbered stop markers (blue circles)
+    optimized.forEach((wp, i) => {
+      routePreviewMarkers.push(new google.maps.Marker({
+        position: { lat: wp.latitude, lng: wp.longitude },
+        map,
+        label: { text: String(i + 1), color: '#fff', fontWeight: '700', fontSize: '11px' },
+        icon: {
+          path: google.maps.SymbolPath.CIRCLE,
+          scale: 14,
+          fillColor: '#2563EB',
+          fillOpacity: 1,
+          strokeColor: '#1D4ED8',
+          strokeWeight: 2,
+        },
+        title: `${i + 1}. ${wp.displayAddress}`,
+        zIndex: 20,
+      }));
+    });
+
+    // Fit bounds to all stops
+    const bounds = new google.maps.LatLngBounds();
+    bounds.extend({ lat: start.latitude, lng: start.longitude });
+    optimized.forEach(wp => bounds.extend({ lat: wp.latitude, lng: wp.longitude }));
+    map.fitBounds(bounds, { padding: 60 });
+  }
+
+  // Request one Directions chunk and return decoded path points
+  function requestDirectionsChunk(origin, destination, waypointLatLngs) {
+    return new Promise(resolve => {
+      const service = new google.maps.DirectionsService();
+      service.route({
+        origin:      new google.maps.LatLng(origin.lat, origin.lng),
+        destination: new google.maps.LatLng(destination.lat, destination.lng),
+        waypoints:   waypointLatLngs.map(p => ({
+          location: new google.maps.LatLng(p.lat, p.lng),
+          stopover: false,
+        })),
+        travelMode:  google.maps.TravelMode.DRIVING,
+        region:      'BR',
+      }, (result, status) => {
+        if (status !== 'OK') { resolve([]); return; }
+        // Collect all step path points from all legs
+        const path = [];
+        result.routes[0].legs.forEach(leg =>
+          leg.steps.forEach(step =>
+            step.path.forEach(pt => path.push(pt))
+          )
+        );
+        resolve(path);
+      });
+    });
+  }
+
+  // Draw road-following polyline in chunks of 25 (Directions API limit)
+  async function drawRoadPolyline(start, optimized) {
+    const CHUNK = 23; // 23 intermediate + origin + destination = 25 max
+    const allPoints = [
+      { lat: start.latitude, lng: start.longitude },
+      ...optimized.map(wp => ({ lat: wp.latitude, lng: wp.longitude })),
+    ];
+
+    for (let i = 0; i < allPoints.length - 1; i += CHUNK) {
+      const chunk  = allPoints.slice(i, i + CHUNK + 1);
+      const origin = chunk[0];
+      const dest   = chunk[chunk.length - 1];
+      const waypts = chunk.slice(1, -1);
+
+      const path = await requestDirectionsChunk(origin, dest, waypts);
+
+      if (path.length > 0) {
+        routePreviewPolylines.push(new google.maps.Polyline({
+          path,
+          geodesic:      true,
+          strokeColor:   '#2563EB',
+          strokeOpacity: 0.85,
+          strokeWeight:  4,
+          map,
+        }));
+      } else {
+        // Fallback: straight line if Directions failed for this chunk
+        routePreviewPolylines.push(new google.maps.Polyline({
+          path: chunk.map(p => ({ lat: p.lat, lng: p.lng })),
+          geodesic:      true,
+          strokeColor:   '#2563EB',
+          strokeOpacity: 0.4,
+          strokeWeight:  3,
+          strokeDasharray: '8,6',
+          map,
+        }));
+      }
+
+      await new Promise(r => setTimeout(r, 250)); // respect rate limit
+    }
+  }
+
+  async function showRoutePreview(start, optimized) {
+    clearRoutePreview();
+    placeStopMarkers(start, optimized);
+    await drawRoadPolyline(start, optimized);
   }
 
   let dispatchCancelled = false;
@@ -924,79 +1290,264 @@
     const progressText = document.getElementById('progress-text');
     progressWrap.classList.add('visible');
 
-    const waypoints = [];
+    // ── Step 1: Geocode all addresses ─────────────────────────
+    const geocoded = [];
     for (let i = 0; i < rows.length; i++) {
       if (dispatchCancelled) break;
       const row     = rows[i];
       const address = `${row.logradouro}, ${row.numero}, ${row.cidade}, Brasil`;
       const display = `${row.logradouro}, ${row.numero}${row.complemento ? ' ' + row.complemento : ''}, ${row.cidade}`;
 
-      const pct = Math.round(((i + 1) / rows.length) * 100);
-      progressFill.style.width = pct + '%';
+      progressFill.style.width = Math.round(((i + 1) / rows.length) * 60) + '%';
       progressText.textContent = `Geocodificando ${i + 1}/${rows.length}: ${row.logradouro}`;
 
       const geo = await geocode(address);
       if (geo) {
-        waypoints.push({
-          seq:              row.seq || i + 1,
-          logradouro:       row.logradouro,
-          numero:           row.numero,
-          complemento:      row.complemento,
-          cidade:           row.cidade,
-          displayAddress:   display,
+        geocoded.push({
+          originalSeq:     row.seq || i + 1,   // CSV reference — NOT delivery order
+          logradouro:      row.logradouro,
+          numero:          row.numero,
+          complemento:     row.complemento,
+          cidade:          row.cidade,
+          displayAddress:  display,
           formattedAddress: geo.formattedAddress,
-          latitude:         geo.latitude,
-          longitude:        geo.longitude,
-          status:           'pending',
-          deliveryIndex:    i,
+          latitude:        geo.latitude,
+          longitude:       geo.longitude,
         });
       }
       await new Promise(resolve => setTimeout(resolve, 80));
     }
 
-    if (dispatchCancelled) {
+    if (dispatchCancelled || geocoded.length === 0) {
       progressWrap.classList.remove('visible');
       btn.disabled    = false;
       btn.textContent = 'Enviar Rota';
+      if (!dispatchCancelled) alert('Nenhum endereço pôde ser geocodificado.');
       return;
     }
 
-    if (waypoints.length === 0) {
-      alert('Nenhum endereço pôde ser geocodificado. Verifique os dados.');
-      progressWrap.classList.remove('visible');
-      btn.disabled    = false;
-      btn.textContent = 'Enviar Rota';
-      return;
-    }
+    // ── Step 2: Get driver's current location as route start ──
+    progressFill.style.width = '65%';
+    progressText.textContent = 'Obtendo localização do motorista…';
 
+    const locData = driverData[driverId];
+    const start   = locData
+      ? { latitude: locData.latitude, longitude: locData.longitude }
+      : { latitude: geocoded[0].latitude, longitude: geocoded[0].longitude };
+
+    // ── Step 3: Optimize route (Nearest Neighbor) ─────────────
+    progressFill.style.width = '75%';
+    progressText.textContent = `Otimizando ${geocoded.length} paradas…`;
+
+    const optimized = optimizeRoute(start, geocoded);
+
+    // Assign optimized delivery order (1-based)
+    const waypoints = optimized.map((wp, i) => ({
+      waypointId:          `WP${String(i+1).padStart(3,'0')}`,
+      order:               i + 1,
+      originalSeq:         wp.originalSeq,
+      logradouro:          wp.logradouro,
+      numero:              wp.numero,
+      complemento:         wp.complemento,
+      cidade:              wp.cidade,
+      displayAddress:      wp.displayAddress,
+      formattedAddress:    wp.formattedAddress,
+      latitude:            wp.latitude,
+      longitude:           wp.longitude,
+      distanceFromPrevious: wp.distanceFromPrevious,
+      status:              'pending',
+    }));
+
+    const totalKm = waypoints.reduce((s, w) => s + (w.distanceFromPrevious || 0), 0);
+
+    // ── Step 4: Preview optimized route on dashboard map ──────
+    progressFill.style.width = '85%';
+    progressText.textContent = 'Desenhando rota nas ruas…';
+    await showRoutePreview(start, waypoints);
+
+    // ── Step 5: Save to Firestore ─────────────────────────────
+    progressFill.style.width = '95%';
     progressText.textContent = 'Salvando no Firestore…';
 
     try {
       await addDoc(collection(db, 'routes'), {
-        driverId:    driverId,
-        companyId:   companyId,
-        status:      'pending',
-        waypoints:   waypoints,
-        totalStops:  waypoints.length,
-        createdAt:   serverTimestamp(),
+        driverId:     driverId,
+        companyId:    companyId,
+        status:       'pending',
+        waypoints:    waypoints,
+        totalStops:   waypoints.length,
+        totalDistanceKm: Math.round(totalKm * 10) / 10,
+        origin: {
+          latitude:  start.latitude,
+          longitude: start.longitude,
+          address:   'Posição do motorista',
+        },
+        createdAt:    serverTimestamp(),
         dispatchedBy: 'web_dashboard',
       });
 
       progressFill.style.width = '100%';
-      progressText.textContent = `✓ ${waypoints.length} endereços enviados com sucesso!`;
-      btn.textContent = '✓ Enviado!';
+      progressText.textContent =
+        `✓ Rota otimizada: ${waypoints.length} paradas · ~${Math.round(totalKm)} km`;
+      btn.textContent = '✓ Despachado!';
 
       setTimeout(() => {
         closeModal('dispatch-modal');
         progressWrap.classList.remove('visible');
         btn.disabled    = false;
         btn.textContent = 'Enviar Rota';
-      }, 2000);
+      }, 3000);
     } catch (err) {
       alert('Erro ao salvar rota: ' + err.message);
       progressWrap.classList.remove('visible');
       btn.disabled    = false;
       btn.textContent = 'Enviar Rota';
+    }
+  };
+
+  // ── View switcher ──────────────────────────────────────────
+  window.switchView = function(view) {
+    const isMap = view === 'map';
+    document.getElementById('view-map').style.display     = isMap ? 'flex' : 'none';
+    document.getElementById('view-drivers').style.display = isMap ? 'none' : 'block';
+    document.getElementById('tab-map').classList.toggle('active',     isMap);
+    document.getElementById('tab-drivers').classList.toggle('active', !isMap);
+    if (!isMap) loadDriversGallery();
+  };
+
+  // ── Drivers gallery ────────────────────────────────────────
+  async function loadDriversGallery() {
+    const grid = document.getElementById('gallery-grid');
+    const sub  = document.getElementById('gallery-sub');
+    grid.innerHTML = '<div class="gallery-empty">Carregando…</div>';
+
+    try {
+      // 1. Fetch all drivers linked to this company via driverLocations
+      const locSnap = await getDocs(
+        query(collection(db, 'driverLocations'), where('companyId', '==', companyId))
+      );
+      const drivers = {};
+      locSnap.forEach(d => {
+        const data = d.data();
+        drivers[data.driverId || d.id] = {
+          id:     data.driverId || d.id,
+          name:   data.driverName || 'Motorista',
+          status: data.status || 'offline',
+          routes: [],
+        };
+      });
+
+      if (Object.keys(drivers).length === 0) {
+        grid.innerHTML = '<div class="gallery-empty">Nenhum motorista vinculado a esta empresa ainda.</div>';
+        sub.textContent = '0 motoristas';
+        return;
+      }
+
+      // 2. Fetch all active routes for this company (single-field index — no composite needed)
+      const routeSnap = await getDocs(
+        query(collection(db, 'routes'), where('companyId', '==', companyId))
+      );
+      routeSnap.forEach(d => {
+        const r = { id: d.id, ...d.data() };
+        // Include pending and in_progress routes; skip completed
+        if (r.status !== 'completed' && drivers[r.driverId]) {
+          drivers[r.driverId].routes.push(r);
+        }
+      });
+
+      // 3. Render
+      const driverList = Object.values(drivers);
+      const totalStops = driverList.reduce((s, d) =>
+        s + d.routes.reduce((rs, r) =>
+          rs + (r.waypoints || []).filter(w => w.status === 'pending').length, 0), 0);
+
+      sub.textContent = `${driverList.length} motorista${driverList.length !== 1 ? 's' : ''} · ${totalStops} entrega${totalStops !== 1 ? 's' : ''} ativa${totalStops !== 1 ? 's' : ''}`;
+
+      grid.innerHTML = driverList.map(driver => {
+        const color = colorFor(driver.name);
+        const initial = driver.name[0].toUpperCase();
+        const statusText = { online: 'Online', offline: 'Offline', delivering: 'Entregando' }[driver.status] || driver.status;
+        const stopCount = driver.routes.reduce((s, r) =>
+          s + (r.waypoints || []).filter(w => w.status === 'pending').length, 0);
+
+        const routeRows = driver.routes.flatMap(route =>
+          (route.waypoints || []).map(wp => `
+            <div class="delivery-item" id="di-${route.id}-${wp.waypointId}">
+              <div class="delivery-order ${wp.status !== 'pending' ? (wp.status === 'recebido' ? 'done' : 'skip') : ''}">
+                ${wp.order || '?'}
+              </div>
+              <div class="delivery-info">
+                <div class="delivery-address">${wp.displayAddress || wp.address || '–'}</div>
+                <div class="delivery-city">${wp.complemento ? wp.complemento + ' · ' : ''}${wp.cidade || ''}</div>
+              </div>
+              <span class="delivery-status ds-${wp.status || 'pending'}">
+                ${{ pending: 'Pendente', recebido: 'Entregue', recusado: 'Recusado', cancelado: 'Cancelado' }[wp.status] || 'Pendente'}
+              </span>
+              <button class="delivery-remove"
+                      onclick="removeWaypoint('${route.id}','${wp.waypointId}',event)"
+                      title="Remover entrega">✕</button>
+            </div>`)
+        );
+
+        return `
+        <div class="dgc" id="dgc-${driver.id}">
+          <div class="dgc-header" onclick="toggleAccordion('${driver.id}')">
+            <div class="dgc-avatar" style="background:${color}">${initial}</div>
+            <div class="dgc-info">
+              <div class="dgc-name">${driver.name}</div>
+              <div class="dgc-meta">${statusText} · ${stopCount} entrega${stopCount !== 1 ? 's' : ''} pendente${stopCount !== 1 ? 's' : ''}</div>
+            </div>
+            <span class="dgc-chevron" id="chev-${driver.id}">▼</span>
+          </div>
+          <div class="dgc-body" id="acc-${driver.id}">
+            ${routeRows.length > 0
+              ? routeRows.join('')
+              : '<div class="dgc-empty">Nenhuma entrega pendente.</div>'}
+          </div>
+        </div>`;
+      }).join('');
+
+    } catch (e) {
+      grid.innerHTML = `<div class="gallery-empty" style="color:red">Erro: ${e.message}</div>`;
+    }
+  }
+
+  // ── Toggle accordion ───────────────────────────────────────
+  window.toggleAccordion = function(driverId) {
+    const body  = document.getElementById(`acc-${driverId}`);
+    const chev  = document.getElementById(`chev-${driverId}`);
+    const isOpen = body.classList.contains('open');
+    body.classList.toggle('open', !isOpen);
+    chev.classList.toggle('open', !isOpen);
+  };
+
+  // ── Remove waypoint from route ─────────────────────────────
+  window.removeWaypoint = async function(routeId, waypointId, event) {
+    event.stopPropagation();
+    if (!confirm('Remover esta entrega da rota?')) return;
+
+    const itemEl = document.getElementById(`di-${routeId}-${waypointId}`);
+    if (itemEl) itemEl.style.opacity = '0.4';
+
+    try {
+      const routeRef = doc(db, 'routes', routeId);
+      const snap     = await getDoc(routeRef);
+      if (!snap.exists()) { alert('Rota não encontrada.'); return; }
+
+      const waypoints = (snap.data().waypoints || [])
+        .filter(w => w.waypointId !== waypointId)
+        .map((w, i) => ({ ...w, order: i + 1 })); // re-number
+
+      if (waypoints.length === 0) {
+        await updateDoc(routeRef, { status: 'completed', waypoints: [] });
+      } else {
+        await updateDoc(routeRef, { waypoints });
+      }
+
+      loadDriversGallery();
+    } catch (e) {
+      alert('Erro ao remover entrega: ' + e.message);
+      if (itemEl) itemEl.style.opacity = '1';
     }
   };
 
