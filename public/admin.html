@@ -324,11 +324,26 @@
   <div class="gate-card">
     <img src="assets/img/logo.png" alt="LinkingGo" />
     <h2>Admin</h2>
-    <p>Área restrita — insira a senha para continuar</p>
-    <input type="password" id="gate-pass" placeholder="Senha de administrador"
-           onkeydown="if(event.key==='Enter') checkGate()" />
-    <button onclick="checkGate()">Acessar</button>
-    <div class="gate-error" id="gate-error">Senha incorreta.</div>
+
+    <!-- Passo 1: senha admin -->
+    <div id="gate-pass-step">
+      <p>Área restrita — insira a senha para continuar</p>
+      <input type="password" id="gate-pass" placeholder="Senha de administrador"
+             onkeydown="if(event.key==='Enter') checkGate()" />
+      <button onclick="checkGate()">Acessar</button>
+      <div class="gate-error" id="gate-error">Senha incorreta.</div>
+    </div>
+
+    <!-- Passo 2: login Firebase (exibido após senha correta) -->
+    <div id="gate-login-step" style="display:none">
+      <p>Agora entre com sua conta de gestor</p>
+      <input type="email" id="gate-email" placeholder="seu@email.com"
+             onkeydown="if(event.key==='Enter') handleGateLogin()" />
+      <input type="password" id="gate-loginpass" placeholder="Senha"
+             onkeydown="if(event.key==='Enter') handleGateLogin()" style="margin-top:10px" />
+      <button id="gate-login-btn" onclick="handleGateLogin()" style="margin-top:10px">Entrar</button>
+      <div class="gate-error" id="gate-login-error" style="display:none"></div>
+    </div>
   </div>
 </div>
 
@@ -422,6 +437,8 @@
 <!-- Firebase SDK -->
 <script type="module">
   import { initializeApp }   from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+  import { getAuth, signInWithEmailAndPassword, onAuthStateChanged }
+    from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
   import { getFirestore, collection, addDoc, getDocs, doc, deleteDoc,
            serverTimestamp, query, orderBy }
     from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
@@ -434,16 +451,35 @@
     messagingSenderId: '132678928883',
   };
 
-  const app = initializeApp(firebaseConfig);
-  const db  = getFirestore(app);
+  const app  = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db   = getFirestore(app);
+
+  let adminUnlocked = false;
+
+  // ── If already logged in from gestor.html, skip login step ─
+  onAuthStateChanged(auth, user => {
+    if (user && adminUnlocked) {
+      showApp();
+    }
+  });
 
   // ── Password gate ──────────────────────────────────────────
   window.checkGate = function() {
     const pass = document.getElementById('gate-pass').value;
     if (pass === 'admin_empr1') {
-      document.getElementById('gate').style.display = 'none';
-      document.getElementById('app').style.display  = 'block';
-      loadCompanies();
+      adminUnlocked = true;
+      // Check if already authenticated
+      if (auth.currentUser) {
+        document.getElementById('gate').style.display = 'none';
+        document.getElementById('app').style.display  = 'block';
+        loadCompanies();
+        return;
+      }
+      // Not authenticated — show login form
+      document.getElementById('gate-pass-step').style.display = 'none';
+      document.getElementById('gate-login-step').style.display = 'block';
+      document.getElementById('gate-error').style.display = 'none';
     } else {
       document.getElementById('gate-error').style.display = 'block';
       document.getElementById('gate-pass').value = '';
@@ -479,6 +515,7 @@
           <div class="company-info">
             <div class="company-name">${c.name || '–'}</div>
             <div class="company-meta">${c.email || '–'} · ${c.cnpj || 'sem CNPJ'}</div>
+            <div class="company-meta" style="font-family:monospace;font-size:.7rem;color:#94A3B8;margin-top:2px" title="Código para vincular no app">ID: ${c.id}</div>
             <div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap;">
               <span class="badge badge-${plan}">${planLabel}</span>
               <span class="badge badge-${active ? 'active' : 'inactive'}">${active ? 'Ativa' : 'Inativa'}</span>
@@ -490,6 +527,32 @@
     } catch (err) {
       list.innerHTML = `<div class="empty" style="color:red">Erro ao carregar: ${err.message}</div>`;
     }
+  }
+
+  // ── Firebase login after password gate ────────────────────
+  window.handleGateLogin = async function() {
+    const email = document.getElementById('gate-email').value.trim();
+    const pass  = document.getElementById('gate-loginpass').value;
+    const errEl = document.getElementById('gate-login-error');
+    const btn   = document.getElementById('gate-login-btn');
+    errEl.style.display = 'none';
+    btn.disabled = true;
+    btn.textContent = 'Entrando…';
+    try {
+      await signInWithEmailAndPassword(auth, email, pass);
+      showApp();
+    } catch (e) {
+      errEl.textContent = 'E-mail ou senha incorretos.';
+      errEl.style.display = 'block';
+      btn.disabled = false;
+      btn.textContent = 'Entrar';
+    }
+  };
+
+  function showApp() {
+    document.getElementById('gate').style.display = 'none';
+    document.getElementById('app').style.display  = 'block';
+    loadCompanies();
   }
 
   // ── Delete company ─────────────────────────────────────────
@@ -523,8 +586,13 @@
     };
 
     try {
-      await addDoc(collection(db, 'companies'), data);
-      alertEl.textContent = `Empresa "${data.name}" cadastrada com sucesso!`;
+      const docRef = await addDoc(collection(db, 'companies'), data);
+      alertEl.innerHTML = `
+        Empresa "<strong>${data.name}</strong>" cadastrada!<br>
+        <span style="font-size:.8rem">Código para o motorista vincular no app:</span><br>
+        <code style="display:inline-block;background:#E0F2FE;color:#0369A1;padding:4px 10px;border-radius:6px;
+                      font-size:.85rem;margin-top:4px;letter-spacing:.04em;font-weight:700">${docRef.id}</code>
+      `;
       alertEl.className = 'alert success';
       document.getElementById('company-form').reset();
       loadCompanies();
