@@ -1339,8 +1339,10 @@
     return null;
   }
 
-  // ── Route optimizer — Nearest Neighbor (Haversine) ─────────
-  // Same algorithm as the mobile app (RouteOptimizer.js)
+  // ── Route optimizer — Nearest Neighbor + 2-opt (Haversine) ──
+  // Mirrors the mobile app (RouteOptimizer.js):
+  //   Phase 1: Nearest Neighbor builds initial route in O(n²)
+  //   Phase 2: 2-opt removes crossing edges by reversing sub-segments
   function haversine(a, b) {
     const R  = 6371;
     const dL = (b.latitude  - a.latitude)  * Math.PI / 180;
@@ -1352,7 +1354,33 @@
     return R * 2 * Math.atan2(Math.sqrt(x), Math.sqrt(1-x));
   }
 
+  function twoOptImprove(route, start) {
+    let best = [...route];
+    let improved = true;
+    while (improved) {
+      improved = false;
+      for (let i = 0; i < best.length - 1; i++) {
+        for (let j = i + 1; j < best.length; j++) {
+          const prevI = i === 0 ? start : best[i - 1];
+          const nextJ = j < best.length - 1 ? best[j + 1] : null;
+          const dBefore = haversine(prevI, best[i]) + (nextJ ? haversine(best[j], nextJ) : 0);
+          const dAfter  = haversine(prevI, best[j]) + (nextJ ? haversine(best[i], nextJ) : 0);
+          if (dAfter < dBefore - 1e-10) {
+            best = [
+              ...best.slice(0, i),
+              ...best.slice(i, j + 1).reverse(),
+              ...best.slice(j + 1),
+            ];
+            improved = true;
+          }
+        }
+      }
+    }
+    return best;
+  }
+
   function optimizeRoute(start, stops) {
+    // Phase 1 — Nearest Neighbor
     const unvisited = [...stops];
     const ordered   = [];
     let current = start;
@@ -1363,10 +1391,16 @@
         if (d < nearestDist) { nearestDist = d; nearestIdx = i; }
       }
       const next = unvisited.splice(nearestIdx, 1)[0];
-      ordered.push({ ...next, distanceFromPrevious: Math.round(nearestDist * 100) / 100 });
+      ordered.push(next);
       current = next;
     }
-    return ordered;
+    // Phase 2 — 2-opt refinement
+    const refined = twoOptImprove(ordered, start);
+    // Recompute distanceFromPrevious after refinement
+    return refined.map((wp, i) => {
+      const prev = i === 0 ? start : refined[i - 1];
+      return { ...wp, distanceFromPrevious: Math.round(haversine(prev, wp) * 100) / 100 };
+    });
   }
 
   // ── Route preview — markers + road-following polyline ──────
