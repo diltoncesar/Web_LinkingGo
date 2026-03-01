@@ -323,19 +323,31 @@
     /* ── CSV modal specifics ── */
     .driver-select-label { font-size: .8rem; font-weight: 600; color: var(--gray-600);
       text-transform: uppercase; letter-spacing: .05em; margin-bottom: 6px; }
-    .driver-select {
-      width: 100%;
+    .dispatch-driver-badge {
+      display: flex;
+      align-items: center;
+      gap: 12px;
       padding: 10px 14px;
+      background: var(--gray-100);
       border: 1.5px solid var(--gray-200);
       border-radius: 8px;
-      font-size: .9rem;
-      font-family: 'Inter', sans-serif;
-      color: var(--gray-900);
-      background: var(--gray-100);
-      outline: none;
       margin-bottom: 16px;
     }
-    .driver-select:focus { border-color: var(--blue); background: var(--white); }
+    .dispatch-driver-avatar {
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      background: var(--gray-300);
+      color: var(--white);
+      font-weight: 800;
+      font-size: .9rem;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    #dispatch-driver-name {
+      font-size: .9rem;
+      font-weight: 600;
+      color: var(--gray-400);
+    }
 
     .csv-label {
       font-size: .8rem;
@@ -851,9 +863,11 @@
     </div>
     <div class="modal-body">
       <div class="driver-select-label">Motorista</div>
-      <select class="driver-select" id="dispatch-driver-select">
-        <option value="">Selecione um motorista…</option>
-      </select>
+      <div class="dispatch-driver-badge">
+        <div class="dispatch-driver-avatar" id="dispatch-driver-avatar">?</div>
+        <span id="dispatch-driver-name">Selecione um motorista na galeria</span>
+      </div>
+      <input type="hidden" id="dispatch-driver-id" value="" />
 
       <div class="csv-label">
         Lista de endereços (CSV)
@@ -962,7 +976,8 @@
   let driverData    = {};          // { driverId: location doc }
   let companyId     = null;
   let companyName   = '';
-  let selectedDriver = null;
+  let selectedDriver      = null;
+  let galleryActiveDriver = { id: null, name: null };
   let unsubLocations = null;
   let unsubDrivers   = null;
 
@@ -1026,7 +1041,6 @@
 
     initMap();
     startRealtime();
-    loadDriversForSelect();
   });
 
   // ── Init Google Map ────────────────────────────────────────
@@ -1255,10 +1269,27 @@
 
   // ── Dispatch modal ─────────────────────────────────────────
   window.openDispatchModal = function(driverId) {
-    const sel = document.getElementById('dispatch-driver-select');
-    if (driverId && sel.querySelector(`option[value="${driverId}"]`)) {
-      sel.value = driverId;
+    const resolvedId   = driverId || galleryActiveDriver.id;
+    const resolvedName = (driverData[resolvedId]?.driverName) || galleryActiveDriver.name;
+
+    const idInput  = document.getElementById('dispatch-driver-id');
+    const nameEl   = document.getElementById('dispatch-driver-name');
+    const avatarEl = document.getElementById('dispatch-driver-avatar');
+
+    if (resolvedId && resolvedName) {
+      idInput.value          = resolvedId;
+      nameEl.textContent     = resolvedName;
+      nameEl.style.color     = 'var(--gray-900)';
+      avatarEl.textContent   = resolvedName[0].toUpperCase();
+      avatarEl.style.background = colorFor(resolvedName);
+    } else {
+      idInput.value          = '';
+      nameEl.textContent     = 'Selecione um motorista na galeria';
+      nameEl.style.color     = 'var(--gray-400)';
+      avatarEl.textContent   = '?';
+      avatarEl.style.background = 'var(--gray-300)';
     }
+
     document.getElementById('dispatch-csv').value = '';
     document.getElementById('import-progress').classList.remove('visible');
     document.getElementById('dispatch-btn').disabled = false;
@@ -1270,24 +1301,6 @@
     document.getElementById(id).classList.remove('open');
   };
 
-  async function loadDriversForSelect() {
-    // Load drivers from driverLocations — same source as the map markers
-    const sel = document.getElementById('dispatch-driver-select');
-    if (!companyId) return;
-    try {
-      const q    = query(collection(db, 'driverLocations'), where('companyId', '==', companyId));
-      const snap = await getDocs(q);
-      snap.forEach(d => {
-        const data = d.data();
-        const opt  = document.createElement('option');
-        opt.value       = data.driverId || d.id;
-        opt.textContent = data.driverName || data.driverId || d.id;
-        sel.appendChild(opt);
-      });
-    } catch (e) {
-      console.warn('Could not load drivers list:', e);
-    }
-  }
 
   // ── Parse CSV ──────────────────────────────────────────────
   // Accepts with or without header row.
@@ -1536,10 +1549,10 @@
   let dispatchCancelled = false;
 
   window.handleDispatch = async function() {
-    const driverId = document.getElementById('dispatch-driver-select').value;
+    const driverId = document.getElementById('dispatch-driver-id').value;
     const csvText  = document.getElementById('dispatch-csv').value.trim();
 
-    if (!driverId) { alert('Selecione um motorista.'); return; }
+    if (!driverId) { alert('Selecione um motorista na galeria antes de despachar.'); return; }
     if (!csvText)  { alert('Cole a lista de endereços.'); return; }
 
     const rows = parseCSV(csvText);
@@ -1772,7 +1785,7 @@
 
         return `
         <div class="dgc" id="dgc-${driver.id}">
-          <div class="dgc-header" onclick="toggleAccordion('${driver.id}')">
+          <div class="dgc-header" onclick="toggleAccordion('${driver.id}','${driver.name.replace(/'/g, '\\\'')}')">
             <div class="dgc-avatar" style="background:${color}">${initial}</div>
             <div class="dgc-info">
               <div class="dgc-name">${driver.name}</div>
@@ -1820,12 +1833,15 @@
   }
 
   // ── Toggle accordion ───────────────────────────────────────
-  window.toggleAccordion = function(driverId) {
-    const body  = document.getElementById(`acc-${driverId}`);
-    const chev  = document.getElementById(`chev-${driverId}`);
+  window.toggleAccordion = function(driverId, driverName) {
+    const body   = document.getElementById(`acc-${driverId}`);
+    const chev   = document.getElementById(`chev-${driverId}`);
     const isOpen = body.classList.contains('open');
     body.classList.toggle('open', !isOpen);
     chev.classList.toggle('open', !isOpen);
+    galleryActiveDriver = !isOpen
+      ? { id: driverId, name: driverName }
+      : { id: null, name: null };
   };
 
   // ── View driver route on map (called from gallery) ─────────
