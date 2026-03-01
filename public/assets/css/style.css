@@ -149,7 +149,7 @@ ul { list-style: none; }
 .nav-links {
   display: flex;
   align-items: center;
-  gap: 20px;
+  gap: 28px;
 }
 .nav-links a {
   font-size: .9rem;
@@ -160,45 +160,6 @@ ul { list-style: none; }
 #navbar.scrolled .nav-links a { color: var(--gray-700); }
 .nav-links a:hover { color: var(--blue) !important; }
 
-/* Separator between nav links and action buttons */
-.nav-sep { width: 1px; height: 20px; background: rgba(255,255,255,.2); margin: 0 8px; }
-#navbar.scrolled .nav-sep { background: var(--gray-300); }
-
-/* Inline nav buttons (formerly nav-cta) */
-.nav-btn {
-  display: inline-flex;
-  align-items: center;
-  padding: 8px 18px;
-  border-radius: var(--radius-sm);
-  font-size: .82rem;
-  font-weight: 700;
-  transition: all var(--transition);
-  white-space: nowrap;
-}
-.nav-btn-gestor {
-  background: var(--gray-800) !important;
-  color: var(--white) !important;
-  border: 2px solid var(--gray-700);
-  letter-spacing: .05em;
-  text-transform: uppercase;
-  font-size: .76rem;
-}
-.nav-btn-gestor:hover { background: var(--gray-700) !important; }
-#navbar.scrolled .nav-btn-gestor { background: var(--gray-800) !important; }
-
-.nav-btn-outline {
-  color: var(--blue) !important;
-  border: 2px solid var(--blue);
-  background: transparent;
-}
-.nav-btn-outline:hover { background: var(--blue-light) !important; }
-
-.nav-btn-primary {
-  background: var(--blue) !important;
-  color: var(--white) !important;
-  box-shadow: 0 4px 14px rgba(37,99,235,.35);
-}
-.nav-btn-primary:hover { background: var(--blue-dark) !important; }
 
 .nav-toggle {
   display: none;
@@ -660,6 +621,9 @@ ul { list-style: none; }
   align-items: center;
   gap: 16px;
   margin-top: 56px;
+  max-width: 80%;
+  margin-left: auto;
+  margin-right: auto;
 }
 .carousel-viewport {
   flex: 1;
@@ -812,13 +776,14 @@ ul { list-style: none; }
 }
 .store-btn:hover { background: rgba(255,255,255,.22); transform: translateY(-2px); }
 .store-btn-icon-wrap {
-  width: 32px;
-  height: 32px;
+  width: 30px;
+  height: 30px;
   flex-shrink: 0;
+  overflow: hidden;
 }
 .store-btn-img {
-  width: 100%;
-  height: 100%;
+  width: 30px;
+  height: 30px;
   object-fit: contain;
   display: block;
 }
@@ -1031,8 +996,6 @@ footer {
     gap: 12px;
   }
   .nav-links.open a { color: var(--gray-700) !important; }
-  .nav-links.open .nav-sep { display: none; }
-  .nav-links.open .nav-btn { text-align: center; justify-content: center; width: 100%; }
 
   .testimonials-carousel { gap: 8px; }
   .carousel-btn { width: 36px; height: 36px; font-size: 1.3rem; }

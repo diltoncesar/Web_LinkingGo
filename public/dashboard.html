@@ -699,6 +699,28 @@
     }
     .dgc-btn-add:hover { background: var(--blue-mid); }
 
+    /* ── Add stop autocomplete ── */
+    .add-autocomplete-wrap { position: relative; margin-bottom: 16px; }
+    .add-autocomplete-wrap label { font-size: .78rem; font-weight: 600; color: var(--gray-600);
+      text-transform: uppercase; letter-spacing: .05em; margin-bottom: 5px; display: block; }
+    .add-autocomplete-input {
+      width: 100%;
+      padding: 10px 14px 10px 36px;
+      border: 1.5px solid var(--blue);
+      border-radius: 8px;
+      font-size: .9rem;
+      font-family: 'Inter', sans-serif;
+      color: var(--gray-900);
+      background: var(--white);
+      outline: none;
+    }
+    .add-autocomplete-icon {
+      position: absolute; left: 11px; bottom: 10px;
+      font-size: 1rem; pointer-events: none;
+    }
+    .add-fields-divider { font-size: .72rem; color: var(--gray-400); margin: 0 0 12px;
+      text-align: center; text-transform: uppercase; letter-spacing: .05em; }
+
     /* ── Add stop modal form ── */
     .add-form-row {
       display: flex;
@@ -912,6 +934,22 @@
       <button class="modal-close" onclick="closeModal('add-stop-modal')">✕</button>
     </div>
     <div class="modal-body">
+
+      <!-- Places autocomplete search -->
+      <div class="add-autocomplete-wrap">
+        <label>Buscar endereço</label>
+        <span class="add-autocomplete-icon">🔍</span>
+        <input type="text" id="add-autocomplete"
+               class="add-autocomplete-input"
+               placeholder="Digite o endereço e selecione na lista…"
+               autocomplete="off" />
+      </div>
+      <!-- Coordinates from Places (hidden) -->
+      <input type="hidden" id="add-lat" />
+      <input type="hidden" id="add-lng" />
+
+      <div class="add-fields-divider">ou preencha manualmente</div>
+
       <div class="add-form-row">
         <div class="add-form-group">
           <label>Logradouro *</label>
@@ -1955,21 +1993,58 @@
   let addStopDriverId   = null;
   let addStopDriverName = '';
 
+  // Places Autocomplete — initialized once, reused across modal opens
+  let addStopAutocomplete = null;
+  function ensureAddStopAutocomplete() {
+    if (addStopAutocomplete) return;
+    const input = document.getElementById('add-autocomplete');
+    if (!input || !window.google?.maps?.places?.Autocomplete) return;
+    addStopAutocomplete = new google.maps.places.Autocomplete(input, {
+      componentRestrictions: { country: 'br' },
+      fields: ['address_components', 'geometry'],
+      types:  ['address'],
+    });
+    addStopAutocomplete.addListener('place_changed', () => {
+      const place = addStopAutocomplete.getPlace();
+      if (!place?.geometry?.location) return;
+
+      // Store coordinates
+      document.getElementById('add-lat').value = place.geometry.location.lat();
+      document.getElementById('add-lng').value = place.geometry.location.lng();
+
+      // Parse address components
+      const c = {};
+      (place.address_components || []).forEach(ac =>
+        ac.types.forEach(t => { c[t] = ac.long_name; })
+      );
+      document.getElementById('add-logradouro').value = c.route             || '';
+      document.getElementById('add-numero').value     = c.street_number     || '';
+      document.getElementById('add-cep').value        = c.postal_code       || '';
+      document.getElementById('add-cidade').value     =
+        c.administrative_area_level_2 || c.locality  || '';
+
+      // Focus complemento so user can add apartment/note right away
+      document.getElementById('add-complemento').focus();
+    });
+  }
+
   window.openAddStopModal = function(driverId, driverName) {
     addStopDriverId   = driverId;
     addStopDriverName = driverName;
     document.getElementById('add-stop-driver-label').textContent = driverName;
     // Clear fields
-    ['add-logradouro','add-numero','add-complemento','add-cep','add-cidade']
+    ['add-autocomplete','add-logradouro','add-numero','add-complemento','add-cep','add-cidade']
       .forEach(id => document.getElementById(id).value = '');
+    document.getElementById('add-lat').value = '';
+    document.getElementById('add-lng').value = '';
     const fb = document.getElementById('add-stop-feedback');
     fb.textContent = '';
     fb.className   = 'add-stop-feedback';
     document.getElementById('add-stop-btn').disabled    = false;
     document.getElementById('add-stop-btn').textContent = 'Adicionar Parada';
     document.getElementById('add-stop-modal').classList.add('open');
-    // Focus first field
-    setTimeout(() => document.getElementById('add-logradouro').focus(), 200);
+    ensureAddStopAutocomplete();
+    setTimeout(() => document.getElementById('add-autocomplete').focus(), 200);
   };
 
   // Best-insertion algorithm:
@@ -2012,18 +2087,26 @@
 
     const btn = document.getElementById('add-stop-btn');
     btn.disabled    = true;
-    btn.textContent = 'Geocodificando…';
+    btn.textContent = 'Adicionando…';
     const fb = document.getElementById('add-stop-feedback');
-    fb.textContent = 'Buscando coordenadas…';
+    fb.textContent = 'Processando…';
     fb.className   = 'add-stop-feedback';
 
     try {
-      // 1. Geocode
-      const geoQuery = cep
-        ? `${logradouro}, ${numero}, ${cep}, ${cidade}, Brasil`
-        : `${logradouro}, ${numero}, ${cidade}, Brasil`;
-      const geo = await geocode(geoQuery);
-      if (!geo) throw new Error('Endereço não encontrado. Verifique e tente novamente.');
+      // 1. Resolve coordinates — use Places result if available, otherwise geocode
+      const placeLat = parseFloat(document.getElementById('add-lat').value);
+      const placeLng = parseFloat(document.getElementById('add-lng').value);
+      let geo;
+      if (!isNaN(placeLat) && !isNaN(placeLng)) {
+        geo = { latitude: placeLat, longitude: placeLng, formattedAddress: null };
+      } else {
+        btn.textContent = 'Geocodificando…';
+        const geoQuery = cep
+          ? `${logradouro}, ${numero}, ${cep}, ${cidade}, Brasil`
+          : `${logradouro}, ${numero}, ${cidade}, Brasil`;
+        geo = await geocode(geoQuery);
+        if (!geo) throw new Error('Endereço não encontrado. Verifique e tente novamente.');
+      }
 
       const displayAddress = [
         `${logradouro}, ${numero}`,
