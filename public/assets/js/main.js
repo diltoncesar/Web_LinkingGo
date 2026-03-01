@@ -7,18 +7,15 @@ window.addEventListener('scroll', () => {
 // ── Mobile nav toggle ──────────────────────────────────────
 const navToggle = document.querySelector('.nav-toggle');
 const navLinks  = document.querySelector('.nav-links');
-const navCta    = document.querySelector('.nav-cta');
 
 navToggle?.addEventListener('click', () => {
   navLinks.classList.toggle('open');
-  navCta.classList.toggle('open');
 });
 
 // Close mobile menu on link click
 document.querySelectorAll('.nav-links a').forEach(link => {
   link.addEventListener('click', () => {
     navLinks.classList.remove('open');
-    navCta.classList.remove('open');
   });
 });
 

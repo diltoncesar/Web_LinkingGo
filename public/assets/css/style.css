@@ -160,8 +160,45 @@ ul { list-style: none; }
 #navbar.scrolled .nav-links a { color: var(--gray-700); }
 .nav-links a:hover { color: var(--blue) !important; }
 
-.nav-cta { display: flex; align-items: center; gap: 12px; }
-.nav-cta .btn { padding: 10px 22px; font-size: .875rem; }
+/* Separator between nav links and action buttons */
+.nav-sep { width: 1px; height: 20px; background: rgba(255,255,255,.2); margin: 0 8px; }
+#navbar.scrolled .nav-sep { background: var(--gray-300); }
+
+/* Inline nav buttons (formerly nav-cta) */
+.nav-btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 18px;
+  border-radius: var(--radius-sm);
+  font-size: .82rem;
+  font-weight: 700;
+  transition: all var(--transition);
+  white-space: nowrap;
+}
+.nav-btn-gestor {
+  background: var(--gray-800) !important;
+  color: var(--white) !important;
+  border: 2px solid var(--gray-700);
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  font-size: .76rem;
+}
+.nav-btn-gestor:hover { background: var(--gray-700) !important; }
+#navbar.scrolled .nav-btn-gestor { background: var(--gray-800) !important; }
+
+.nav-btn-outline {
+  color: var(--blue) !important;
+  border: 2px solid var(--blue);
+  background: transparent;
+}
+.nav-btn-outline:hover { background: var(--blue-light) !important; }
+
+.nav-btn-primary {
+  background: var(--blue) !important;
+  color: var(--white) !important;
+  box-shadow: 0 4px 14px rgba(37,99,235,.35);
+}
+.nav-btn-primary:hover { background: var(--blue-dark) !important; }
 
 .nav-toggle {
   display: none;
@@ -610,6 +647,67 @@ ul { list-style: none; }
 
 .price-value.consult { font-size: 1.8rem; }
 
+/* ── Testimonials / Social Proof ─────────────────────────── */
+#depoimentos {
+  padding: 100px 0;
+  background: var(--gray-100);
+}
+.testimonials-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 28px;
+  margin-top: 56px;
+}
+.testimonial-card {
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  padding: 36px 30px 30px;
+  box-shadow: var(--shadow-sm);
+  border: 1.5px solid var(--gray-100);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  transition: transform var(--transition), box-shadow var(--transition);
+  position: relative;
+}
+.testimonial-card:hover { transform: translateY(-5px); box-shadow: var(--shadow-md); }
+.testimonial-quote {
+  font-size: 4rem;
+  font-weight: 900;
+  color: var(--blue-mid);
+  line-height: .8;
+  font-family: Georgia, serif;
+  position: absolute;
+  top: 18px; left: 26px;
+  opacity: .6;
+}
+.testimonial-text {
+  font-size: .925rem;
+  color: var(--gray-700);
+  line-height: 1.75;
+  padding-top: 28px;
+  flex: 1;
+}
+.testimonial-author {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding-top: 16px;
+  border-top: 1px solid var(--gray-100);
+}
+.testimonial-avatar {
+  width: 44px; height: 44px;
+  border-radius: 50%;
+  background: var(--blue);
+  color: var(--white);
+  font-weight: 800;
+  font-size: .85rem;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.testimonial-name { font-size: .9rem; font-weight: 700; color: var(--gray-900); }
+.testimonial-company { font-size: .78rem; color: var(--gray-500); margin-top: 2px; }
+
 /* ── App Download ─────────────────────────────────────────── */
 #download {
   padding: 100px 0;
@@ -657,10 +755,7 @@ ul { list-style: none; }
   backdrop-filter: blur(6px);
 }
 .store-btn:hover { background: rgba(255,255,255,.22); transform: translateY(-2px); }
-.store-btn-icon { font-size: 1.8rem; }
-.store-btn-text { display: flex; flex-direction: column; text-align: left; }
-.store-btn-label { font-size: .7rem; opacity: .8; }
-.store-btn-name { font-size: 1rem; font-weight: 700; }
+.store-btn-img { height: 44px; width: auto; display: block; }
 
 .download-phones {
   display: flex;
@@ -841,8 +936,7 @@ footer {
 
   .footer-inner { grid-template-columns: 1fr 1fr; gap: 32px; }
 
-  .nav-links,
-  .nav-cta { display: none; }
+  .nav-links { display: none; }
 
   .nav-toggle { display: flex; }
 
@@ -852,17 +946,15 @@ footer {
     position: absolute;
     top: 100%; left: 0; right: 0;
     background: var(--white);
-    padding: 20px 24px;
+    padding: 20px 24px 24px;
     box-shadow: var(--shadow-lg);
-    gap: 16px;
+    gap: 12px;
   }
   .nav-links.open a { color: var(--gray-700) !important; }
-  .nav-cta.open {
-    display: flex;
-    flex-direction: column;
-    padding: 0 24px 20px;
-    background: var(--white);
-  }
+  .nav-links.open .nav-sep { display: none; }
+  .nav-links.open .nav-btn { text-align: center; justify-content: center; width: 100%; }
+
+  .testimonials-grid { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 600px) {

@@ -648,6 +648,22 @@
     }
     .dgc-btn-clear:hover { background: #FEE2E2; }
 
+    .dgc-btn-download {
+      padding: 4px 10px;
+      font-size: .72rem;
+      font-weight: 700;
+      border-radius: 6px;
+      background: var(--green-light);
+      color: var(--green);
+      border: none;
+      cursor: pointer;
+      font-family: 'Inter', sans-serif;
+      flex-shrink: 0;
+      white-space: nowrap;
+      margin-right: 6px;
+    }
+    .dgc-btn-download:hover { background: #BBF7D0; }
+
     .dgc-btn-add {
       padding: 4px 10px;
       font-size: .72rem;
@@ -1692,6 +1708,9 @@
             <button class="driver-dispatch-btn" style="margin-right:6px"
                     onclick="event.stopPropagation();viewDriverOnMap('${driver.id}')"
                     title="Ver rota no mapa">🗺</button>
+            <button class="dgc-btn-download"
+                    onclick="event.stopPropagation();downloadDriverHistory('${driver.id}','${driver.name.replace(/'/g, '\\\'')}')"
+                    title="Baixar histórico do dia em CSV">⬇ CSV</button>
             <button class="dgc-btn-add"
                     onclick="event.stopPropagation();openAddStopModal('${driver.id}','${driver.name.replace(/'/g, '\\\'')}')"
                     title="Adicionar parada">➕ Parada</button>
@@ -1771,6 +1790,69 @@
     } catch (e) {
       alert('Erro ao remover entrega: ' + e.message);
       if (itemEl) itemEl.style.opacity = '1';
+    }
+  };
+
+  // ── Download driver history as CSV ────────────────────────
+  window.downloadDriverHistory = async function(driverId, driverName) {
+    try {
+      // Fetch all routes for this driver (all statuses)
+      const snap = await getDocs(
+        query(collection(db, 'routes'), where('companyId', '==', companyId))
+      );
+
+      const rows = [];
+      snap.forEach(d => {
+        const r = d.data();
+        if (r.driverId !== driverId) return;
+        (r.waypoints || []).forEach(wp => {
+          rows.push({
+            ordem:    wp.order ?? '',
+            endereco: wp.displayAddress || wp.address || '',
+            cep:      wp.cep || '',
+            cidade:   wp.cidade || '',
+            status:   { pending: 'Pendente', recebido: 'Entregue', recusado: 'Recusado', cancelado: 'Cancelado' }[wp.status] || wp.status || '',
+            rota:     d.id,
+          });
+        });
+      });
+
+      if (rows.length === 0) {
+        alert('Nenhuma entrega encontrada para este motorista.');
+        return;
+      }
+
+      // Sort by route creation order, then stop order
+      rows.sort((a, b) => a.rota.localeCompare(b.rota) || a.ordem - b.ordem);
+
+      const header = ['Ordem', 'Endereço', 'CEP', 'Cidade', 'Status'];
+      const csv    = [
+        header.join(','),
+        ...rows.map(r => [
+          r.ordem,
+          `"${(r.endereco).replace(/"/g, '""')}"`,
+          r.cep,
+          `"${r.cidade}"`,
+          r.status,
+        ].join(',')),
+      ].join('\r\n');
+
+      // Build filename: YYYY-MM-DD-NomeMotorista.csv
+      const today    = new Date().toISOString().slice(0, 10);
+      const safeName = driverName.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '_');
+      const filename = `${today}-${safeName}.csv`;
+
+      const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement('a');
+      a.href = url; a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+    } catch (e) {
+      alert('Erro ao gerar histórico: ' + e.message);
     }
   };
 
