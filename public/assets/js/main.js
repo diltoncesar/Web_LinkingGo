@@ -66,6 +66,33 @@ form?.addEventListener('submit', async e => {
   }
 });
 
+// ── Testimonials Carousel ──────────────────────────────────
+const track  = document.querySelector('.testimonials-track');
+const dots   = document.querySelectorAll('.carousel-dot');
+const cards  = document.querySelectorAll('.testimonials-track .testimonial-card');
+
+if (track && cards.length) {
+  let current = 0;
+  let timer;
+
+  function goTo(idx) {
+    current = (idx + cards.length) % cards.length;
+    track.style.transform = `translateX(-${current * 100}%)`;
+    dots.forEach((d, i) => d.classList.toggle('active', i === current));
+  }
+
+  function startTimer() {
+    clearInterval(timer);
+    timer = setInterval(() => goTo(current + 1), 5000);
+  }
+
+  document.querySelector('.carousel-prev')?.addEventListener('click', () => { goTo(current - 1); startTimer(); });
+  document.querySelector('.carousel-next')?.addEventListener('click', () => { goTo(current + 1); startTimer(); });
+  dots.forEach((dot, i) => dot.addEventListener('click', () => { goTo(i); startTimer(); }));
+
+  startTimer();
+}
+
 // ── Smooth active nav highlight ────────────────────────────
 const sections = document.querySelectorAll('section[id]');
 const navAnchors = document.querySelectorAll('.nav-links a[href^="#"]');
