@@ -536,6 +536,13 @@
     .dgc-info { flex: 1; min-width: 0; }
     .dgc-name { font-weight: 700; font-size: .925rem; color: var(--gray-900); }
     .dgc-meta { font-size: .775rem; color: var(--gray-500); margin-top: 2px; }
+    .dgc-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 5px 6px;
+    }
+    .dgc-actions-row { display: contents; }
+    .dgc-actions button { width: 100%; justify-content: center; }
     .dgc-chevron {
       font-size: .7rem;
       color: var(--gray-400);
@@ -752,7 +759,10 @@
       <img src="assets/img/logo.png" alt="LinkingGo" />
       <div>
         <div class="brand-text">Dashboard</div>
-        <div class="company-name" id="company-name-header">Carregando…</div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div class="company-name" id="company-name-header">Carregando…</div>
+          <span id="company-code-badge" style="display:none;background:#EFF6FF;color:#2563EB;font-size:.72rem;font-weight:700;padding:2px 10px;border-radius:999px;letter-spacing:.06em;cursor:default;" title="Código para motoristas vincularem no app"></span>
+        </div>
       </div>
     </div>
     <div class="header-actions">
@@ -929,7 +939,7 @@
   import { initializeApp }    from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
   import { getAuth, onAuthStateChanged, signOut }
     from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
-  import { getFirestore, doc, getDoc, collection, query, where,
+  import { getFirestore, doc, getDoc, setDoc, collection, query, where,
            onSnapshot, orderBy, addDoc, serverTimestamp, getDocs, updateDoc }
     from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
@@ -977,7 +987,36 @@
     // get company name
     if (companyId) {
       const cSnap = await getDoc(doc(db, 'companies', companyId));
-      companyName = cSnap.exists() ? cSnap.data().name : 'Empresa';
+      if (cSnap.exists()) {
+        companyName = cSnap.data().name || 'Empresa';
+        let shortCode = cSnap.data().shortCode;
+
+        // Auto-generate shortCode for companies created before this feature
+        if (!shortCode) {
+          let code, exists;
+          do {
+            code = Math.floor(100000 + Math.random() * 900000).toString();
+            const s = await getDoc(doc(db, 'companyCodes', code));
+            exists = s.exists();
+          } while (exists);
+          shortCode = code;
+          await updateDoc(doc(db, 'companies', companyId), { shortCode });
+          await setDoc(doc(db, 'companyCodes', shortCode), { companyId });
+        }
+
+        const badge = document.getElementById('company-code-badge');
+        badge.textContent = `Código motorista: ${shortCode}`;
+        badge.style.display = 'inline-flex';
+        badge.title = 'Clique para copiar';
+        badge.style.cursor = 'pointer';
+        badge.addEventListener('click', () => {
+          navigator.clipboard.writeText(shortCode).then(() => {
+            const orig = badge.textContent;
+            badge.textContent = '✓ Copiado!';
+            setTimeout(() => { badge.textContent = orig; }, 1500);
+          });
+        });
+      }
     }
     document.getElementById('company-name-header').textContent = companyName || 'Empresa';
 
@@ -1705,18 +1744,24 @@
               <div class="dgc-name">${driver.name}</div>
               <div class="dgc-meta">${statusText} · ${stopCount} entrega${stopCount !== 1 ? 's' : ''} pendente${stopCount !== 1 ? 's' : ''}</div>
             </div>
-            <button class="driver-dispatch-btn" style="margin-right:6px"
-                    onclick="event.stopPropagation();viewDriverOnMap('${driver.id}')"
-                    title="Ver rota no mapa">🗺</button>
-            <button class="dgc-btn-download"
-                    onclick="event.stopPropagation();downloadDriverHistory('${driver.id}','${driver.name.replace(/'/g, '\\\'')}')"
-                    title="Baixar histórico do dia em CSV">⬇ CSV</button>
-            <button class="dgc-btn-add"
-                    onclick="event.stopPropagation();openAddStopModal('${driver.id}','${driver.name.replace(/'/g, '\\\'')}')"
-                    title="Adicionar parada">➕ Parada</button>
-            ${stopCount > 0 ? `<button class="dgc-btn-clear"
-                    onclick="event.stopPropagation();clearDriverRoutes('${driver.id}','${driver.name.replace(/'/g, '\\\'')}')"
-                    title="Remover todas as entregas">🗑 Limpar</button>` : ''}
+            <div class="dgc-actions">
+              <div class="dgc-actions-row">
+                <button class="dgc-btn-add"
+                        onclick="event.stopPropagation();openAddStopModal('${driver.id}','${driver.name.replace(/'/g, '\\\'')}')"
+                        title="Adicionar parada">➕ Parada</button>
+                ${stopCount > 0 ? `<button class="dgc-btn-clear"
+                        onclick="event.stopPropagation();clearDriverRoutes('${driver.id}','${driver.name.replace(/'/g, '\\\'')}')"
+                        title="Remover todas as entregas">🗑 Limpar</button>` : '<span></span>'}
+              </div>
+              <div class="dgc-actions-row">
+                <button class="driver-dispatch-btn"
+                        onclick="event.stopPropagation();viewDriverOnMap('${driver.id}')"
+                        title="Ver rota no mapa">🗺 Foto</button>
+                <button class="dgc-btn-download"
+                        onclick="event.stopPropagation();downloadDriverHistory('${driver.id}','${driver.name.replace(/'/g, '\\\'')}')"
+                        title="Baixar histórico do dia em CSV">⬇ CSV</button>
+              </div>
+            </div>
             <span class="dgc-chevron" id="chev-${driver.id}">▼</span>
           </div>
           <div class="dgc-body" id="acc-${driver.id}">

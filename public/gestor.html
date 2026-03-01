@@ -346,6 +346,17 @@
   };
 
   // ── Register ───────────────────────────────────────────────
+  // Generate unique 6-digit company code
+  async function generateShortCode() {
+    let code, exists;
+    do {
+      code = Math.floor(100000 + Math.random() * 900000).toString();
+      const snap = await getDoc(doc(db, 'companyCodes', code));
+      exists = snap.exists();
+    } while (exists);
+    return code;
+  }
+
   window.handleRegister = async function(e) {
     e.preventDefault();
     clearAlert();
@@ -360,15 +371,24 @@
       const cred = await createUserWithEmailAndPassword(auth, email, pass);
       const uid  = cred.user.uid;
 
+      // Generate short 6-digit code for drivers
+      const shortCode = await generateShortCode();
+      const companyId = uid;
+
       // Create company document
-      const companyId = uid; // use uid as company ID for simplicity
       await setDoc(doc(db, 'companies', companyId), {
         name:          companyName,
         managerUid:    uid,
         managerEmail:  email,
         plan:          'starter',
         active:        true,
+        shortCode:     shortCode,
         createdAt:     serverTimestamp(),
+      });
+
+      // Reverse lookup: shortCode → companyId
+      await setDoc(doc(db, 'companyCodes', shortCode), {
+        companyId: companyId,
       });
 
       // Create user document
@@ -380,7 +400,9 @@
         createdAt:      serverTimestamp(),
       });
 
-      window.location.href = 'dashboard.html';
+      // Show code before redirecting
+      showAlert(`✓ Conta criada! Código da empresa para motoristas: ${shortCode} — guarde este código.`, 'success');
+      setTimeout(() => { window.location.href = 'dashboard.html'; }, 5000);
     } catch (err) {
       const msgs = {
         'auth/email-already-in-use': 'E-mail já cadastrado. Faça login.',
