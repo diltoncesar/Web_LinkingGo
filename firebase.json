@@ -5,6 +5,24 @@
       "firebase.json",
       "**/.*",
       "**/node_modules/**"
+    ],
+    "rewrites": [
+      { "source": "/premium", "destination": "/premium.html" },
+      { "source": "/dashboard", "destination": "/dashboard.html" },
+      { "source": "/gestor", "destination": "/gestor.html" },
+      { "source": "/admin", "destination": "/admin.html" }
     ]
-  }
+  },
+  "functions": [
+    {
+      "source": "functions",
+      "codebase": "linkinggo-payments",
+      "ignore": [
+        "node_modules",
+        ".git",
+        "firebase-debug.log",
+        "firebase-debug.*.log"
+      ]
+    }
+  ]
 }

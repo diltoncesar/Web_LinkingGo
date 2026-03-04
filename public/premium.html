@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LinkingGo Premium</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <!-- PagSeguro / PagBank Direct Checkout SDK -->
+  <script src="https://assets.pagseguro.com.br/checkout-sdk/js/direct-checkout.min.js"></script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --blue:       #2563EB;
+      --blue-dark:  #1D4ED8;
+      --blue-light: #EFF6FF;
+      --green:      #16A34A;
+      --green-dark: #15803D;
+      --green-bg:   #F0FDF4;
+      --gold:       #F59E0B;
+      --gray-900:   #0F172A;
+      --gray-700:   #334155;
+      --gray-500:   #64748B;
+      --gray-300:   #CBD5E1;
+      --gray-100:   #F1F5F9;
+      --red:        #DC2626;
+      --white:      #FFFFFF;
+    }
+    html { font-size: 16px; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(135deg, #0F172A 0%, #1E3A5F 100%);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 24px 16px 48px;
+    }
+
+    /* ── Logo ── */
+    .logo-area {
+      text-align: center;
+      margin-bottom: 24px;
+      margin-top: 16px;
+    }
+    .logo-area img { height: 44px; }
+    .logo-area h1 {
+      color: #fff;
+      font-size: 22px;
+      font-weight: 800;
+      margin-top: 8px;
+      letter-spacing: -0.3px;
+    }
+
+    /* ── Plan card ── */
+    .plan-card {
+      background: var(--white);
+      border-radius: 20px;
+      padding: 28px 24px 20px;
+      width: 100%;
+      max-width: 440px;
+      box-shadow: 0 32px 80px rgba(0,0,0,.35);
+      animation: fadeUp .35s ease both;
+    }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(18px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .plan-header {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .plan-badge {
+      display: inline-block;
+      background: var(--gold);
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      padding: 3px 10px;
+      border-radius: 20px;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+    .plan-price {
+      font-size: 38px;
+      font-weight: 800;
+      color: var(--gray-900);
+      line-height: 1;
+    }
+    .plan-price sup { font-size: 18px; vertical-align: super; }
+    .plan-price span { font-size: 14px; font-weight: 500; color: var(--gray-500); }
+    .plan-desc {
+      font-size: 13px;
+      color: var(--gray-500);
+      margin-top: 6px;
+    }
+
+    /* ── Feature list ── */
+    .features {
+      list-style: none;
+      margin: 16px 0 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .features li {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: var(--gray-700);
+      font-weight: 500;
+    }
+    .features li::before {
+      content: '✓';
+      color: var(--green);
+      font-weight: 800;
+      font-size: 14px;
+      flex-shrink: 0;
+    }
+
+    /* ── Tabs ── */
+    .tabs {
+      display: flex;
+      border: 1.5px solid var(--gray-300);
+      border-radius: 10px;
+      overflow: hidden;
+      margin-bottom: 20px;
+    }
+    .tab-btn {
+      flex: 1;
+      padding: 11px 0;
+      font-size: 14px;
+      font-weight: 600;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      color: var(--gray-500);
+      transition: background .15s, color .15s;
+    }
+    .tab-btn.active {
+      background: var(--blue);
+      color: #fff;
+    }
+
+    /* ── Form fields ── */
+    label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--gray-700);
+      margin-bottom: 5px;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+    input {
+      width: 100%;
+      border: 1.5px solid var(--gray-300);
+      border-radius: 10px;
+      padding: 12px 14px;
+      font-size: 15px;
+      color: var(--gray-900);
+      background: var(--gray-100);
+      outline: none;
+      transition: border-color .15s;
+      font-family: inherit;
+    }
+    input:focus { border-color: var(--blue); background: #fff; }
+    .field { margin-bottom: 14px; }
+    .field-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    /* ── Buttons ── */
+    .btn-primary {
+      width: 100%;
+      padding: 15px;
+      background: var(--green);
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      margin-top: 4px;
+      transition: background .15s, opacity .15s;
+      font-family: inherit;
+    }
+    .btn-primary:hover { background: var(--green-dark); }
+    .btn-primary:disabled { opacity: 0.55; cursor: default; }
+
+    .btn-pix {
+      width: 100%;
+      padding: 15px;
+      background: var(--blue);
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      margin-top: 4px;
+      transition: background .15s, opacity .15s;
+      font-family: inherit;
+    }
+    .btn-pix:hover { background: var(--blue-dark); }
+    .btn-pix:disabled { opacity: 0.55; cursor: default; }
+
+    /* ── Error / info messages ── */
+    .msg {
+      font-size: 13px;
+      padding: 10px 14px;
+      border-radius: 8px;
+      margin-top: 12px;
+      display: none;
+    }
+    .msg.error   { background: #FEE2E2; color: var(--red); display: block; }
+    .msg.success { background: var(--green-bg); color: var(--green); display: block; }
+    .msg.info    { background: var(--blue-light); color: var(--blue); display: block; }
+
+    /* ── PIX QR section ── */
+    .pix-box {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+      margin-top: 18px;
+      padding: 20px;
+      background: var(--gray-100);
+      border-radius: 14px;
+      border: 1.5px dashed var(--gray-300);
+    }
+    .pix-box img { width: 180px; height: 180px; border-radius: 8px; }
+    .pix-code-label { font-size: 12px; color: var(--gray-500); font-weight: 600; text-align: center; }
+    .pix-code-wrap {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+    }
+    .pix-code-text {
+      flex: 1;
+      font-size: 11px;
+      word-break: break-all;
+      color: var(--gray-700);
+      background: #fff;
+      border: 1px solid var(--gray-300);
+      border-radius: 8px;
+      padding: 8px 10px;
+      font-family: monospace;
+      max-height: 80px;
+      overflow-y: auto;
+    }
+    .btn-copy {
+      flex-shrink: 0;
+      padding: 8px 14px;
+      background: var(--blue);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .pix-waiting { font-size: 12px; color: var(--gray-500); text-align: center; }
+
+    /* ── Success screen ── */
+    #successScreen {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 14px;
+      padding: 10px 0 4px;
+    }
+    .success-icon { font-size: 56px; }
+    .success-title { font-size: 22px; font-weight: 800; color: var(--green); }
+    .success-sub   { font-size: 14px; color: var(--gray-500); line-height: 1.6; }
+    .btn-open-app {
+      width: 100%;
+      padding: 14px;
+      background: var(--blue);
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      margin-top: 8px;
+      font-family: inherit;
+    }
+
+    .secure-note {
+      text-align: center;
+      font-size: 11px;
+      color: var(--gray-500);
+      margin-top: 16px;
+    }
+
+    /* ── Tab panels ── */
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+  </style>
+</head>
+<body>
+
+  <!-- Logo -->
+  <div class="logo-area">
+    <img src="/assets/logo_linking_go.png" alt="LinkingGo" onerror="this.style.display='none'" />
+    <h1>LinkingGo Premium</h1>
+  </div>
+
+  <!-- Main card -->
+  <div class="plan-card">
+
+    <!-- Plan summary -->
+    <div class="plan-header" id="planHeader">
+      <div class="plan-badge">⭐ Premium</div>
+      <div class="plan-price">
+        <sup>R$</sup>29<span>,90/mês</span>
+      </div>
+      <p class="plan-desc">Acesso completo para motoristas autônomos</p>
+    </div>
+
+    <ul class="features" id="featureList">
+      <li>Adicionar e gerenciar paradas ilimitadas</li>
+      <li>Importar rotas via CSV</li>
+      <li>Otimização automática de rota</li>
+      <li>Histórico de entregas</li>
+      <li>Foto de comprovante de entrega</li>
+      <li>Rastreamento GPS em tempo real</li>
+    </ul>
+
+    <!-- Payment tabs -->
+    <div id="paymentSection">
+      <div class="tabs">
+        <button class="tab-btn active" id="tabCard" onclick="switchTab('card')">
+          💳 Cartão
+        </button>
+        <button class="tab-btn" id="tabPix" onclick="switchTab('pix')">
+          📱 PIX
+        </button>
+      </div>
+
+      <!-- ── Tab: Cartão de Crédito ─────────────────────────────── -->
+      <div class="tab-panel active" id="panelCard">
+        <div class="field">
+          <label>Nome no cartão</label>
+          <input type="text" id="cardName" placeholder="NOME SOBRENOME" autocomplete="cc-name" />
+        </div>
+        <div class="field">
+          <label>CPF do titular</label>
+          <input type="text" id="cardCpf" placeholder="000.000.000-00" maxlength="14"
+                 oninput="maskCpf(this)" inputmode="numeric" />
+        </div>
+        <div class="field">
+          <label>Número do cartão</label>
+          <input type="text" id="cardNumber" placeholder="0000 0000 0000 0000" maxlength="19"
+                 oninput="maskCard(this)" inputmode="numeric" autocomplete="cc-number" />
+        </div>
+        <div class="field-row">
+          <div>
+            <label>Validade (MM/AA)</label>
+            <input type="text" id="cardExpiry" placeholder="MM/AA" maxlength="5"
+                   oninput="maskExpiry(this)" inputmode="numeric" autocomplete="cc-exp" />
+          </div>
+          <div>
+            <label>CVV</label>
+            <input type="text" id="cardCvv" placeholder="123" maxlength="4"
+                   inputmode="numeric" autocomplete="cc-csc" />
+          </div>
+        </div>
+        <button class="btn-primary" id="btnAssinar" onclick="handleSubscribe()">
+          Assinar agora — R$29,90/mês
+        </button>
+        <p id="cardMsg" class="msg"></p>
+      </div>
+
+      <!-- ── Tab: PIX ───────────────────────────────────────────── -->
+      <div class="tab-panel" id="panelPix">
+        <p style="font-size:13px;color:var(--gray-500);margin-bottom:16px;line-height:1.6">
+          Gere um QR Code PIX e pague no seu banco. Após a confirmação do pagamento,
+          seu acesso Premium será liberado automaticamente por <strong>30 dias</strong>.
+        </p>
+        <div class="field">
+          <label>CPF (opcional)</label>
+          <input type="text" id="pixCpf" placeholder="000.000.000-00" maxlength="14"
+                 oninput="maskCpf(this)" inputmode="numeric" />
+        </div>
+        <button class="btn-pix" id="btnPix" onclick="handlePixCharge()">
+          Gerar QR Code PIX — R$29,90
+        </button>
+
+        <!-- QR Code result -->
+        <div class="pix-box" id="pixBox">
+          <img id="pixQrImage" src="" alt="QR Code PIX" />
+          <p class="pix-code-label">Ou copie o código Pix Copia e Cola:</p>
+          <div class="pix-code-wrap">
+            <div class="pix-code-text" id="pixCodeText"></div>
+            <button class="btn-copy" onclick="copyPixCode()">Copiar</button>
+          </div>
+          <p class="pix-waiting">⏳ Aguardando pagamento... O app será atualizado automaticamente.</p>
+        </div>
+
+        <p id="pixMsg" class="msg"></p>
+      </div>
+    </div>
+
+    <!-- ── Success screen (shown after confirmed payment) ──────── -->
+    <div id="successScreen">
+      <div class="success-icon">🎉</div>
+      <div class="success-title">Pagamento confirmado!</div>
+      <p class="success-sub">
+        Seu acesso Premium foi ativado.<br />
+        Volte ao app para continuar usando o LinkingGo.
+      </p>
+      <button class="btn-open-app" onclick="openApp()">Abrir LinkingGo</button>
+    </div>
+
+    <p class="secure-note">🔒 Pagamento seguro processado pelo PagBank</p>
+  </div>
+
+<script>
+  // ── Parâmetros da URL ─────────────────────────────────────────
+  const params = new URLSearchParams(window.location.search);
+  const UID   = params.get('uid')   || '';
+  const EMAIL = params.get('email') || '';
+  const NAME  = decodeURIComponent(params.get('name') || 'Motorista');
+
+  // ── URL base das Cloud Functions ──────────────────────────────
+  // Após deploy, substitua pelo URL real das funções:
+  // https://REGION-linkinggo.cloudfunctions.net/functionName
+  // Ou use o domínio personalizado se configurado.
+  const FUNCTIONS_BASE = 'https://us-central1-linkinggo.cloudfunctions.net';
+
+  // ── PagBank public key (sandbox) ─────────────────────────────
+  // Obtenha em: Conta PagBank → Desenvolvedor → Credenciais → Chave pública
+  const PAGBANK_PUBLIC_KEY = 'SUA_PUBLIC_KEY_SANDBOX_AQUI';
+
+  // ── Tab switch ────────────────────────────────────────────────
+  function switchTab(tab) {
+    document.getElementById('panelCard').classList.toggle('active', tab === 'card');
+    document.getElementById('panelPix').classList.toggle('active', tab === 'pix');
+    document.getElementById('tabCard').classList.toggle('active', tab === 'card');
+    document.getElementById('tabPix').classList.toggle('active', tab === 'pix');
+  }
+
+  // ── Máscaras de input ─────────────────────────────────────────
+  function maskCpf(el) {
+    let v = el.value.replace(/\D/g, '').slice(0, 11);
+    if (v.length > 9) v = v.replace(/(\d{3})(\d{3})(\d{3})(\d{0,2})/, '$1.$2.$3-$4');
+    else if (v.length > 6) v = v.replace(/(\d{3})(\d{3})(\d{0,3})/, '$1.$2.$3');
+    else if (v.length > 3) v = v.replace(/(\d{3})(\d{0,3})/, '$1.$2');
+    el.value = v;
+  }
+  function maskCard(el) {
+    let v = el.value.replace(/\D/g, '').slice(0, 16);
+    el.value = v.replace(/(\d{4})(?=\d)/g, '$1 ');
+  }
+  function maskExpiry(el) {
+    let v = el.value.replace(/\D/g, '').slice(0, 4);
+    if (v.length > 2) v = v.replace(/(\d{2})(\d{0,2})/, '$1/$2');
+    el.value = v;
+  }
+
+  // ── Exibir mensagem ───────────────────────────────────────────
+  function showMsg(id, type, text) {
+    const el = document.getElementById(id);
+    el.className = `msg ${type}`;
+    el.textContent = text;
+  }
+
+  // ── Assinar com cartão ────────────────────────────────────────
+  async function handleSubscribe() {
+    const holderName  = document.getElementById('cardName').value.trim();
+    const holderCpf   = document.getElementById('cardCpf').value.trim();
+    const cardNumber  = document.getElementById('cardNumber').value.replace(/\s/g, '');
+    const expiryRaw   = document.getElementById('cardExpiry').value.trim();
+    const cvv         = document.getElementById('cardCvv').value.trim();
+
+    if (!holderName || !holderCpf || !cardNumber || !expiryRaw || !cvv) {
+      showMsg('cardMsg', 'error', 'Preencha todos os campos do cartão.');
+      return;
+    }
+    if (!UID) {
+      showMsg('cardMsg', 'error', 'Sessão inválida. Abra este link pelo app.');
+      return;
+    }
+
+    const [expMonth, expYear] = expiryRaw.split('/');
+    const fullYear = expYear?.length === 2 ? `20${expYear}` : expYear;
+
+    const btn = document.getElementById('btnAssinar');
+    btn.disabled = true;
+    btn.textContent = 'Processando...';
+    showMsg('cardMsg', 'info', 'Criptografando cartão...');
+
+    try {
+      // Encripta os dados do cartão usando o SDK do PagBank
+      const pagSeguro = new PagSeguro({ env: 'SANDBOX' });
+      const { hasErrors, encryptedCard, errors } = pagSeguro.encryptCard({
+        publicKey:    PAGBANK_PUBLIC_KEY,
+        holder:       holderName,
+        number:       cardNumber,
+        expMonth:     expMonth,
+        expYear:      fullYear,
+        securityCode: cvv,
+      });
+
+      if (hasErrors) {
+        const errMsg = Object.values(errors || {}).join('; ') || 'Dados do cartão inválidos.';
+        showMsg('cardMsg', 'error', errMsg);
+        btn.disabled = false;
+        btn.textContent = 'Assinar agora — R$29,90/mês';
+        return;
+      }
+
+      showMsg('cardMsg', 'info', 'Criando assinatura...');
+
+      const res = await fetch(`${FUNCTIONS_BASE}/createSubscription`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          uid:             UID,
+          cardEncrypted:   encryptedCard,
+          holderName,
+          holderDocument:  holderCpf,
+          email:           EMAIL || `${UID}@linkinggo.app`,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Falha ao criar assinatura.');
+      }
+
+      showSuccess();
+    } catch (err) {
+      showMsg('cardMsg', 'error', err.message || 'Erro ao processar pagamento.');
+      btn.disabled = false;
+      btn.textContent = 'Assinar agora — R$29,90/mês';
+    }
+  }
+
+  // ── Gerar cobrança PIX ────────────────────────────────────────
+  async function handlePixCharge() {
+    if (!UID) {
+      showMsg('pixMsg', 'error', 'Sessão inválida. Abra este link pelo app.');
+      return;
+    }
+
+    const taxId = document.getElementById('pixCpf').value.trim();
+
+    const btn = document.getElementById('btnPix');
+    btn.disabled = true;
+    btn.textContent = 'Gerando QR Code...';
+    showMsg('pixMsg', 'info', 'Conectando ao PagBank...');
+
+    try {
+      const res = await fetch(`${FUNCTIONS_BASE}/createPixCharge`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          uid:   UID,
+          email: EMAIL || `${UID}@linkinggo.app`,
+          name:  NAME,
+          taxId,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Falha ao gerar cobrança PIX.');
+      }
+
+      // Exibe QR code
+      const pixBox = document.getElementById('pixBox');
+      pixBox.style.display = 'flex';
+
+      if (data.qrCodeImage) {
+        document.getElementById('pixQrImage').src = data.qrCodeImage;
+      } else {
+        document.getElementById('pixQrImage').style.display = 'none';
+      }
+
+      if (data.qrCodeText) {
+        document.getElementById('pixCodeText').textContent = data.qrCodeText;
+      }
+
+      showMsg('pixMsg', 'success', 'QR Code gerado! Pague no seu banco e aguarde a confirmação.');
+      btn.disabled = false;
+      btn.textContent = 'Gerar novo QR Code';
+    } catch (err) {
+      showMsg('pixMsg', 'error', err.message || 'Erro ao gerar PIX.');
+      btn.disabled = false;
+      btn.textContent = 'Gerar QR Code PIX — R$29,90';
+    }
+  }
+
+  // ── Copiar código PIX ─────────────────────────────────────────
+  function copyPixCode() {
+    const text = document.getElementById('pixCodeText').textContent;
+    navigator.clipboard?.writeText(text).then(() => {
+      const btn = document.querySelector('.btn-copy');
+      btn.textContent = '✓ Copiado';
+      setTimeout(() => { btn.textContent = 'Copiar'; }, 2000);
+    }).catch(() => {
+      // Fallback para dispositivos sem clipboard API
+      const el = document.createElement('textarea');
+      el.value = text;
+      document.body.appendChild(el);
+      el.select();
+      document.execCommand('copy');
+      document.body.removeChild(el);
+    });
+  }
+
+  // ── Mostrar tela de sucesso ───────────────────────────────────
+  function showSuccess() {
+    document.getElementById('planHeader').style.display    = 'none';
+    document.getElementById('featureList').style.display   = 'none';
+    document.getElementById('paymentSection').style.display = 'none';
+    const s = document.getElementById('successScreen');
+    s.style.display = 'flex';
+  }
+
+  // ── Abrir app via deep link ───────────────────────────────────
+  function openApp() {
+    window.location.href = 'linkinggo://premium-success';
+    setTimeout(() => {
+      // Fallback: se o app não abrir, mostra instrução
+      document.querySelector('.btn-open-app').textContent = 'Volte ao app manualmente';
+    }, 2500);
+  }
+</script>
+</body>
+</html>
