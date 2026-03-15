@@ -439,28 +439,23 @@ ul { list-style: none; }
 
 .screenshot-phone {
   width: 200px;
-  background: #1a1a2e;
-  border-radius: 36px;
-  padding: 10px;
-  box-shadow: 0 32px 80px rgba(0,0,0,.25), 0 0 0 1px rgba(255,255,255,.06);
   margin-bottom: 24px;
-  transition: transform var(--transition), box-shadow var(--transition);
+  transition: transform var(--transition);
 }
 
 .screenshot-phone:hover {
   transform: translateY(-8px);
-  box-shadow: 0 48px 100px rgba(37,99,235,.2), 0 0 0 1px rgba(255,255,255,.06);
 }
 
 .screenshot-phone img {
   width: 100%;
-  border-radius: 28px;
+  border-radius: 8px;
   display: block;
+  box-shadow: 0 4px 12px rgba(0,0,0,.08);
 }
 
 .screenshot-featured .screenshot-phone {
   width: 230px;
-  box-shadow: 0 40px 100px rgba(37,99,235,.3), 0 0 0 2px rgba(37,99,235,.4);
 }
 
 .screenshot-title {
@@ -964,25 +959,40 @@ footer {
   .hero-inner,
   .integration-inner,
   .contact-inner,
-  .download-inner { grid-template-columns: 1fr; gap: 48px; }
+  .download-inner { grid-template-columns: 1fr; gap: 40px; }
 
   .hero-visual { display: none; }
   .download-phones { display: none; }
 
+  #hero { padding: 90px 0 60px; }
+
+  #como-funciona,
+  #funcionalidades,
+  #screenshots,
+  #integracao,
+  #precos,
+  #depoimentos,
+  #download,
+  #contato { padding: 64px 0; }
+
   .steps-grid,
-  .features-grid,
-  .pricing-grid { grid-template-columns: 1fr; }
+  .features-grid { grid-template-columns: 1fr 1fr; gap: 20px; }
+
+  .pricing-grid { grid-template-columns: 1fr; max-width: 420px; margin: 0 auto; }
+
+  .steps-connector { display: none; }
 
   .screenshots-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
     align-items: center;
   }
-  .screenshot-featured .screenshot-phone { width: 200px; }
+  .screenshot-phone { width: 100% !important; }
+  .screenshot-text { max-width: none; font-size: .8rem; }
 
   .footer-inner { grid-template-columns: 1fr 1fr; gap: 32px; }
 
   .nav-links { display: none; }
-
   .nav-toggle { display: flex; }
 
   .nav-links.open {
@@ -994,16 +1004,69 @@ footer {
     padding: 20px 24px 24px;
     box-shadow: var(--shadow-lg);
     gap: 12px;
+    z-index: 999;
   }
-  .nav-links.open a { color: var(--gray-700) !important; }
+  .nav-links.open a { color: var(--gray-700) !important; font-size: 1rem; }
 
-  .testimonials-carousel { gap: 8px; }
-  .carousel-btn { width: 36px; height: 36px; font-size: 1.3rem; }
+  .testimonials-carousel { gap: 8px; max-width: 100%; }
+  .carousel-btn { width: 36px; height: 36px; font-size: 1.3rem; flex-shrink: 0; }
+
+  .code-block { font-size: .75rem; }
+  .code-body { padding: 16px; overflow-x: auto; font-size: .75rem; }
+
+  .integration-inner { gap: 40px; }
+
+  .contact-form { padding: 24px; }
+
+  .features-header { margin-bottom: 40px; }
+  .pricing-header  { margin-bottom: 40px; }
 }
 
 @media (max-width: 600px) {
-  .footer-inner { grid-template-columns: 1fr; }
-  .form-row { grid-template-columns: 1fr; }
-  .hero-stats { gap: 20px; }
+  .container { padding: 0 16px; }
+
+  #hero { padding: 80px 0 48px; }
+
+  #como-funciona,
+  #funcionalidades,
+  #screenshots,
+  #integracao,
+  #precos,
+  #depoimentos,
+  #download,
+  #contato { padding: 48px 0; }
+
+  .steps-grid,
+  .features-grid { grid-template-columns: 1fr; }
+
+  .screenshots-grid { grid-template-columns: 1fr; gap: 32px; }
+  .screenshot-item { flex-direction: row; align-items: flex-start; text-align: left; gap: 16px; }
+  .screenshot-phone { width: 80px !important; min-width: 80px; margin-bottom: 0 !important; }
+  .screenshot-title { font-size: .9rem; }
+
+  .hero-stats { gap: 16px; flex-wrap: wrap; }
+  .stat-number { font-size: 1.4rem; }
+  .hero-actions { flex-direction: column; }
+  .hero-actions .btn { width: 100%; justify-content: center; }
+
+  .footer-inner { grid-template-columns: 1fr; gap: 28px; }
   .footer-bottom { flex-direction: column; gap: 8px; text-align: center; }
+
+  .form-row { grid-template-columns: 1fr; }
+  .contact-form { padding: 20px 16px; }
+
+  .pricing-card { padding: 28px 20px; }
+
+  .testimonials-carousel { gap: 4px; }
+  .carousel-btn { display: none; }
+  .carousel-dots { margin-top: 16px; }
+
+  .step-card { padding: 24px 18px; }
+  .feature-card { padding: 24px 18px; }
+
+  footer { padding: 48px 0 20px; }
+  .footer-inner { padding-bottom: 32px; }
+
+  .whatsapp-fab { bottom: 16px; right: 16px; width: 52px; height: 52px; }
+  .whatsapp-fab svg { width: 26px; height: 26px; }
 }

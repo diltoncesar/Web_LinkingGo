@@ -357,7 +357,10 @@
       <img src="assets/img/logo.png" alt="LinkingGo" />
       <span>Admin</span>
     </div>
-    <a href="index.html">← Voltar ao site</a>
+    <div style="display:flex;gap:24px;align-items:center">
+      <a href="admin-costs.html">📊 Custos de API</a>
+      <a href="index.html">← Site</a>
+    </div>
   </header>
 
   <div class="layout">
@@ -406,8 +409,8 @@
           <div class="form-group">
             <label>Plano</label>
             <select id="f-plan">
-              <option value="starter">Starter — R$ 97/mês (5 motoristas)</option>
-              <option value="pro">Pro — R$ 378/mês (20 motoristas)</option>
+              <option value="starter">Starter — R$ 135/mês (5 motoristas)</option>
+              <option value="pro">Pro — R$ 500/mês (20 motoristas)</option>
               <option value="enterprise">Enterprise — Sob consulta</option>
             </select>
           </div>
@@ -440,7 +443,8 @@
   import { getAuth, signInWithEmailAndPassword, onAuthStateChanged }
     from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
   import { getFirestore, collection, addDoc, getDocs, doc, deleteDoc,
-           serverTimestamp, query, orderBy }
+           serverTimestamp, query, orderBy, updateDoc, getDoc,
+           writeBatch, increment, collectionGroup }
     from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
   const firebaseConfig = {
@@ -455,9 +459,10 @@
   const auth = getAuth(app);
   const db   = getFirestore(app);
 
-  let adminUnlocked = false;
+  const SESSION_KEY  = 'lg_admin_unlocked';
+  let adminUnlocked  = sessionStorage.getItem(SESSION_KEY) === '1';
 
-  // ── If already logged in from gestor.html, skip login step ─
+  // ── Se já autenticado + senha já confirmada → entra direto ─
   onAuthStateChanged(auth, user => {
     if (user && adminUnlocked) {
       showApp();
@@ -469,6 +474,7 @@
     const pass = document.getElementById('gate-pass').value;
     if (pass === 'admin_empr1') {
       adminUnlocked = true;
+      sessionStorage.setItem(SESSION_KEY, '1');
       // Check if already authenticated
       if (auth.currentUser) {
         document.getElementById('gate').style.display = 'none';
@@ -505,23 +511,71 @@
       }
 
       list.innerHTML = docs.map(c => {
-        const initial = (c.name || '?')[0].toUpperCase();
-        const plan    = c.plan || 'starter';
-        const active  = c.active !== false;
+        const initial  = (c.name || '?')[0].toUpperCase();
+        const plan     = c.plan || 'starter';
+        const active   = c.active !== false;
+        const ps       = c.paymentStatus || '–';
+        const linked   = c.driverLinkedCount ?? 0;
+        const limit    = c.driverLimit ?? '?';
         const planLabel = { starter: 'Starter', pro: 'Pro', enterprise: 'Enterprise' }[plan] || plan;
+        const psColor   = {TRIAL:'#6366F1',ACTIVE:'#16A34A',OVERDUE:'#D97706',BLOCKED:'#DC2626'}[ps] || '#64748B';
+        const trialStr  = c.trialEndsAt ? new Date(c.trialEndsAt).toLocaleDateString('pt-BR') : '–';
+        const subStr    = c.subscriptionExpiresAt ? new Date(c.subscriptionExpiresAt).toLocaleDateString('pt-BR') : '–';
+        const shortCode = c.shortCode || '–';
         return `
-        <div class="company-item">
-          <div class="company-avatar">${initial}</div>
-          <div class="company-info">
-            <div class="company-name">${c.name || '–'}</div>
-            <div class="company-meta">${c.email || '–'} · ${c.cnpj || 'sem CNPJ'}</div>
-            <div class="company-meta" style="font-family:monospace;font-size:.7rem;color:#94A3B8;margin-top:2px" title="Código para vincular no app">ID: ${c.id}</div>
-            <div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap;">
-              <span class="badge badge-${plan}">${planLabel}</span>
-              <span class="badge badge-${active ? 'active' : 'inactive'}">${active ? 'Ativa' : 'Inativa'}</span>
+        <div class="company-item" style="flex-direction:column;align-items:stretch;gap:10px" id="ci-${c.id}">
+          <div style="display:flex;align-items:center;gap:14px">
+            <div class="company-avatar">${initial}</div>
+            <div class="company-info">
+              <div class="company-name">${c.name || '–'}</div>
+              <div class="company-meta">${c.email || '–'} · Código: <b>${shortCode}</b></div>
+              <div class="company-meta" style="margin-top:4px;display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+                <span class="badge badge-${plan}">${planLabel}</span>
+                <span class="badge badge-${active ? 'active' : 'inactive'}">${active ? 'Ativa' : 'Inativa'}</span>
+                <span style="font-size:.72rem;font-weight:700;color:${psColor}">${ps}</span>
+                <span style="font-size:.72rem;color:#64748B">Vagas: ${linked}/${limit}</span>
+              </div>
+              <div class="company-meta" style="margin-top:2px">Trial até: ${trialStr} · Assinatura: ${subStr}</div>
             </div>
           </div>
-          <button class="btn btn-danger" onclick="deleteCompany('${c.id}')">Remover</button>
+          <details style="font-size:.83rem">
+            <summary style="cursor:pointer;color:#2563EB;font-weight:600;list-style:none">⚙ Gerenciar</summary>
+            <div style="margin-top:10px;display:flex;flex-direction:column;gap:8px">
+              <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+                <label style="font-size:.75rem;text-transform:none;font-weight:600;color:#475569">Status pagamento:</label>
+                <select id="ps-${c.id}" style="width:auto;padding:5px 8px;font-size:.8rem">
+                  <option value="TRIAL"   ${ps==='TRIAL'  ?'selected':''}>TRIAL</option>
+                  <option value="ACTIVE"  ${ps==='ACTIVE' ?'selected':''}>ACTIVE</option>
+                  <option value="OVERDUE" ${ps==='OVERDUE'?'selected':''}>OVERDUE</option>
+                  <option value="BLOCKED" ${ps==='BLOCKED'?'selected':''}>BLOCKED</option>
+                </select>
+                <button class="btn btn-primary" style="width:auto;padding:6px 14px;font-size:.78rem"
+                  onclick="savePaymentStatus('${c.id}')">Salvar</button>
+              </div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+                <label style="font-size:.75rem;text-transform:none;font-weight:600;color:#475569">Limite vagas:</label>
+                <input type="number" id="dl-${c.id}" value="${limit}" min="0" max="9999"
+                  style="width:70px;padding:5px 8px;font-size:.8rem" />
+                <button class="btn btn-primary" style="width:auto;padding:6px 14px;font-size:.78rem"
+                  onclick="saveDriverLimit('${c.id}')">Salvar</button>
+              </div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+                <label style="font-size:.75rem;text-transform:none;font-weight:600;color:#475569">Renovar assinatura:</label>
+                <button class="btn btn-primary" style="width:auto;padding:6px 14px;font-size:.78rem"
+                  onclick="renewSubscription('${c.id}')">+30 dias</button>
+              </div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+                <label style="font-size:.75rem;text-transform:none;font-weight:600;color:#475569">Remover driver (UID):</label>
+                <input type="text" id="rm-${c.id}" placeholder="uid do driver"
+                  style="flex:1;min-width:180px;padding:5px 8px;font-size:.8rem" />
+                <button class="btn btn-danger" style="padding:6px 14px;font-size:.78rem"
+                  onclick="removeDriver('${c.id}')">Remover</button>
+              </div>
+              <div id="msg-${c.id}" style="font-size:.78rem;min-height:16px"></div>
+            </div>
+          </details>
+          <button class="btn btn-danger" style="align-self:flex-end"
+            onclick="deleteCompany('${c.id}')">Deletar empresa</button>
         </div>`;
       }).join('');
     } catch (err) {
@@ -566,6 +620,80 @@
     }
   };
 
+  // ── Helpers para mensagem por empresa ──────────────────────
+  function companyMsg(id, msg, ok = true) {
+    const el = document.getElementById(`msg-${id}`);
+    if (el) { el.textContent = msg; el.style.color = ok ? '#16A34A' : '#DC2626'; }
+  }
+
+  // ── Salvar paymentStatus ────────────────────────────────────
+  window.savePaymentStatus = async function(id) {
+    const val = document.getElementById(`ps-${id}`)?.value;
+    if (!val) return;
+    try {
+      await updateDoc(doc(db, 'companies', id), {paymentStatus: val});
+      companyMsg(id, `✓ paymentStatus → ${val}`);
+    } catch (e) { companyMsg(id, 'Erro: ' + e.message, false); }
+  };
+
+  // ── Salvar driverLimit ──────────────────────────────────────
+  window.saveDriverLimit = async function(id) {
+    const val = parseInt(document.getElementById(`dl-${id}`)?.value, 10);
+    if (isNaN(val)) return;
+    try {
+      await updateDoc(doc(db, 'companies', id), {driverLimit: val});
+      companyMsg(id, `✓ Limite → ${val} vagas`);
+    } catch (e) { companyMsg(id, 'Erro: ' + e.message, false); }
+  };
+
+  // ── Renovar subscriptionExpiresAt (+30 dias) ────────────────
+  window.renewSubscription = async function(id) {
+    try {
+      const compSnap = await getDoc(doc(db, 'companies', id));
+      const current  = compSnap.data()?.subscriptionExpiresAt;
+      const base     = (current && current > Date.now()) ? current : Date.now();
+      const newExp   = base + 30 * 24 * 60 * 60 * 1000;
+      await updateDoc(doc(db, 'companies', id), {
+        subscriptionExpiresAt: newExp,
+        paymentStatus:         'ACTIVE',
+      });
+      companyMsg(id, `✓ Assinatura renovada até ${new Date(newExp).toLocaleDateString('pt-BR')}`);
+    } catch (e) { companyMsg(id, 'Erro: ' + e.message, false); }
+  };
+
+  // ── Remover driver da empresa ───────────────────────────────
+  window.removeDriver = async function(companyId) {
+    const driverUid = document.getElementById(`rm-${companyId}`)?.value.trim();
+    if (!driverUid) { companyMsg(companyId, 'Informe o UID do driver.', false); return; }
+
+    try {
+      const driverRef  = doc(db, 'drivers', driverUid);
+      const driverSnap = await getDoc(driverRef);
+      if (!driverSnap.exists()) {
+        companyMsg(companyId, 'Driver não encontrado.', false); return;
+      }
+      if (driverSnap.data().activeCompany !== companyId) {
+        companyMsg(companyId, 'Driver não está vinculado a esta empresa.', false); return;
+      }
+
+      const batch     = writeBatch(db);
+      const now       = Date.now();
+      batch.update(driverRef, {activeCompany: null, companyRemovedAt: now});
+      batch.update(doc(db, 'companies', companyId), {driverLinkedCount: increment(-1)});
+      const linkRef   = doc(collection(db, 'companyDriverLinks'));
+      batch.set(linkRef, {
+        driverId:  driverUid,
+        companyId: companyId,
+        status:    'removed',
+        removedAt: now,
+        removedBy: 'admin',
+      });
+      await batch.commit();
+      companyMsg(companyId, `✓ Driver ${driverUid.slice(0, 8)}… removido.`);
+      document.getElementById(`rm-${companyId}`).value = '';
+    } catch (e) { companyMsg(companyId, 'Erro: ' + e.message, false); }
+  };
+
   // ── Submit form ────────────────────────────────────────────
   window.handleSubmit = async function(e) {
     e.preventDefault();
@@ -576,13 +704,18 @@
     btn.textContent = 'Salvando...';
 
     const data = {
-      name:      document.getElementById('f-name').value.trim(),
-      cnpj:      document.getElementById('f-cnpj').value.trim(),
-      email:     document.getElementById('f-email').value.trim(),
-      phone:     document.getElementById('f-phone').value.trim(),
-      plan:      document.getElementById('f-plan').value,
-      active:    document.getElementById('f-active').value === 'true',
-      createdAt: serverTimestamp(),
+      name:                  document.getElementById('f-name').value.trim(),
+      cnpj:                  document.getElementById('f-cnpj').value.trim(),
+      email:                 document.getElementById('f-email').value.trim(),
+      phone:                 document.getElementById('f-phone').value.trim(),
+      plan:                  document.getElementById('f-plan').value,
+      active:                document.getElementById('f-active').value === 'true',
+      createdAt:             serverTimestamp(),
+      paymentStatus:         'TRIAL',
+      driverLimit:           10,
+      driverLinkedCount:     0,
+      trialEndsAt:           Date.now() + 30 * 24 * 60 * 60 * 1000,
+      subscriptionExpiresAt: null,
     };
 
     try {

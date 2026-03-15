@@ -47,7 +47,7 @@
       margin-bottom: 24px;
       margin-top: 16px;
     }
-    .logo-area img { height: 44px; }
+    .logo-area img { height: 60px; }
     .logo-area h1 {
       color: #fff;
       font-size: 22px;
@@ -316,8 +316,8 @@
 
   <!-- Logo -->
   <div class="logo-area">
-    <img src="/assets/logo_linking_go.png" alt="LinkingGo" onerror="this.style.display='none'" />
-    <h1>LinkingGo Premium</h1>
+    <img src="/assets/img/logo.png" alt="LinkingGo" />
+    <h1>Premium</h1>
   </div>
 
   <!-- Main card -->
@@ -432,10 +432,32 @@
 
 <script>
   // ── Parâmetros da URL ─────────────────────────────────────────
-  const params = new URLSearchParams(window.location.search);
-  const UID   = params.get('uid')   || '';
-  const EMAIL = params.get('email') || '';
-  const NAME  = decodeURIComponent(params.get('name') || 'Motorista');
+  const params        = new URLSearchParams(window.location.search);
+  const UID           = params.get('uid')          || '';
+  const EMAIL         = params.get('email')        || '';
+  const NAME          = decodeURIComponent(params.get('name') || 'Motorista');
+  const COMPANY_LINKED = params.get('companyLinked') === '1';
+
+  // ── Mostrar preço com desconto para drivers vinculados ────────
+  if (COMPANY_LINKED) {
+    const priceEl = document.getElementById('planHeader');
+    if (priceEl) {
+      priceEl.innerHTML = `
+        <div class="plan-badge">⭐ Premium</div>
+        <div class="plan-price">
+          <span style="text-decoration:line-through;font-size:18px;color:#94A3B8;font-weight:500">R$29,90</span>
+          &nbsp;<sup>R$</sup>26<span>,91/mês</span>
+        </div>
+        <p class="plan-desc" style="color:#16A34A;font-weight:600">10% de desconto por ser vinculado a uma empresa 🎉</p>
+      `;
+    }
+    document.querySelectorAll('#btnAssinar').forEach(el => {
+      el.textContent = 'Assinar agora — R$26,91/mês';
+    });
+    document.querySelectorAll('#btnPix').forEach(el => {
+      el.textContent = 'Gerar QR Code PIX — R$26,91';
+    });
+  }
 
   // ── URL base das Cloud Functions ──────────────────────────────
   // Após deploy, substitua pelo URL real das funções:

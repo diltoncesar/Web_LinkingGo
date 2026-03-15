@@ -992,7 +992,8 @@
   import { getAuth, onAuthStateChanged, signOut }
     from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
   import { getFirestore, doc, getDoc, setDoc, collection, query, where,
-           onSnapshot, orderBy, addDoc, serverTimestamp, getDocs, updateDoc }
+           onSnapshot, orderBy, addDoc, serverTimestamp, getDocs, updateDoc,
+           increment }
     from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
   const firebaseConfig = {
@@ -1378,16 +1379,55 @@
     }).filter(r => r.logradouro);
   }
 
-  // ── Geocode address ────────────────────────────────────────
+  // ── Usage counter (fire-and-forget) ────────────────────────
+  function trackUsage(field, qty = 1) {
+    const key = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+    setDoc(doc(db, 'usageCounters', key), { [field]: increment(qty) }, { merge: true })
+      .catch(() => {});
+  }
+
+  // ── Geocode cache helpers ───────────────────────────────────
+  function hashAddress(str) {
+    let h = 5381;
+    for (let i = 0; i < str.length; i++) {
+      h = (((h << 5) + h) ^ str.charCodeAt(i)) >>> 0;
+    }
+    return h.toString(16).padStart(8, '0');
+  }
+
+  // ── Geocode address (with Firestore cache) ──────────────────
   async function geocode(address) {
+    const key = hashAddress(address.toLowerCase().trim());
+
+    // Check cache first
+    try {
+      const cacheSnap = await getDoc(doc(db, 'geocodeCache', key));
+      if (cacheSnap.exists()) {
+        const d = cacheSnap.data();
+        trackUsage('geocodeCache');
+        return { latitude: d.lat, longitude: d.lng, formattedAddress: d.fa };
+      }
+    } catch (_) {}
+
+    // API call
+    trackUsage('geocodeApi');
     const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${MAPS_KEY}&region=br&language=pt-BR`;
     const res  = await fetch(url);
     const json = await res.json();
-    if (json.status === 'OK' && json.results.length > 0) {
-      const loc = json.results[0].geometry.location;
-      return { latitude: loc.lat, longitude: loc.lng, formattedAddress: json.results[0].formatted_address };
-    }
-    return null;
+    if (json.status !== 'OK' || !json.results.length) return null;
+
+    const loc = json.results[0].geometry.location;
+    const result = { latitude: loc.lat, longitude: loc.lng, formattedAddress: json.results[0].formatted_address };
+
+    // Save to cache (fire and forget)
+    setDoc(doc(db, 'geocodeCache', key), {
+      lat: result.latitude,
+      lng: result.longitude,
+      fa:  result.formattedAddress,
+      t:   Date.now(),
+    }).catch(() => {});
+
+    return result;
   }
 
   // ── Route optimizer — Nearest Neighbor + 2-opt (Haversine) ──
@@ -1550,6 +1590,7 @@
       const dest   = chunk[chunk.length - 1];
       const waypts = chunk.slice(1, -1);
 
+      trackUsage('directions');
       const path = await requestDirectionsChunk(origin, dest, waypts);
 
       if (path.length > 0) {

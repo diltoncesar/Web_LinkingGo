@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LinkingGo — Custos de API</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --blue:       #2563EB;
+      --blue-dark:  #1D4ED8;
+      --blue-light: #EFF6FF;
+      --gray-900:   #0F172A;
+      --gray-800:   #1E293B;
+      --gray-700:   #334155;
+      --gray-600:   #475569;
+      --gray-500:   #64748B;
+      --gray-300:   #CBD5E1;
+      --gray-200:   #E2E8F0;
+      --gray-100:   #F1F5F9;
+      --white:      #FFFFFF;
+      --green:      #16A34A;
+      --green-light:#DCFCE7;
+      --red:        #EF4444;
+      --red-light:  #FEE2E2;
+      --yellow:     #D97706;
+      --yellow-light:#FEF3C7;
+    }
+    html { font-size: 16px; }
+    body { font-family: 'Inter', sans-serif; background: var(--gray-100); color: var(--gray-800); min-height: 100vh; }
+
+    /* ── Gate ── */
+    #gate {
+      position: fixed; inset: 0;
+      background: linear-gradient(135deg, #0F172A 0%, #1E3A5F 100%);
+      display: flex; align-items: center; justify-content: center; z-index: 9999;
+    }
+    .gate-card {
+      background: var(--white); border-radius: 20px; padding: 48px 40px;
+      width: 100%; max-width: 380px; text-align: center;
+      box-shadow: 0 32px 80px rgba(0,0,0,.4);
+    }
+    .gate-card img { height: 44px; margin: 0 auto 16px; display: block; }
+    .gate-card h2 { font-size: 1.25rem; font-weight: 700; color: var(--gray-900); margin-bottom: 6px; }
+    .gate-card p  { font-size: .875rem; color: var(--gray-500); margin-bottom: 24px; }
+    .gate-card input {
+      width: 100%; padding: 12px 16px; border: 1.5px solid var(--gray-300);
+      border-radius: 10px; font-size: .9375rem; font-family: 'Inter', sans-serif;
+      color: var(--gray-900); background: var(--gray-100); outline: none; margin-bottom: 14px;
+    }
+    .gate-card input:focus { border-color: var(--blue); background: var(--white); }
+    .gate-card button {
+      width: 100%; padding: 13px; background: var(--blue); color: var(--white);
+      border: none; border-radius: 10px; font-size: 1rem; font-weight: 700;
+      font-family: 'Inter', sans-serif; cursor: pointer;
+    }
+    .gate-card button:hover { background: var(--blue-dark); }
+    .gate-error { color: var(--red); font-size: .825rem; margin-top: 10px; display: none; }
+    #app { display: none; }
+
+    /* ── Header ── */
+    header {
+      background: var(--gray-900); color: var(--white);
+      padding: 0 32px; height: 60px;
+      display: flex; align-items: center; justify-content: space-between;
+      position: sticky; top: 0; z-index: 100;
+    }
+    header .brand { display: flex; align-items: center; gap: 12px; }
+    header .brand img { height: 32px; }
+    header .brand span { font-size: .75rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: rgba(255,255,255,.5); }
+    header a { color: rgba(255,255,255,.6); font-size: .875rem; font-weight: 500; text-decoration: none; }
+    header a:hover { color: var(--white); }
+
+    /* ── Layout ── */
+    .layout { max-width: 1200px; margin: 0 auto; padding: 32px 24px; }
+    .page-title { font-size: 1.5rem; font-weight: 800; color: var(--gray-900); margin-bottom: 4px; }
+    .page-sub   { color: var(--gray-500); font-size: .875rem; margin-bottom: 28px; }
+
+    /* ── Controls bar ── */
+    .controls {
+      display: flex; align-items: center; gap: 16px; margin-bottom: 28px;
+      flex-wrap: wrap;
+    }
+    .controls select {
+      padding: 10px 16px; border: 1.5px solid var(--gray-300);
+      border-radius: 10px; font-size: .9rem; font-family: 'Inter', sans-serif;
+      color: var(--gray-800); background: var(--white); cursor: pointer; outline: none;
+    }
+    .controls select:focus { border-color: var(--blue); }
+    .controls label { font-size: .8rem; font-weight: 600; color: var(--gray-600); }
+
+    /* ── KPI cards ── */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px; margin-bottom: 28px;
+    }
+    .kpi {
+      background: var(--white); border-radius: 14px; padding: 22px 24px;
+      box-shadow: 0 2px 12px rgba(0,0,0,.05);
+    }
+    .kpi-label { font-size: .75rem; font-weight: 700; text-transform: uppercase;
+                 letter-spacing: .08em; color: var(--gray-500); margin-bottom: 8px; }
+    .kpi-value { font-size: 1.75rem; font-weight: 800; color: var(--gray-900); line-height: 1; }
+    .kpi-sub   { font-size: .75rem; color: var(--gray-500); margin-top: 6px; }
+    .kpi.green .kpi-value { color: var(--green); }
+    .kpi.red   .kpi-value { color: var(--red); }
+    .kpi.blue  .kpi-value { color: var(--blue); }
+
+    /* ── Credit bar ── */
+    .credit-card {
+      background: var(--white); border-radius: 14px; padding: 24px 28px;
+      box-shadow: 0 2px 12px rgba(0,0,0,.05); margin-bottom: 28px;
+    }
+    .credit-header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 14px;
+    }
+    .credit-title { font-size: .9rem; font-weight: 700; color: var(--gray-900); }
+    .credit-link  { font-size: .8rem; color: var(--blue); text-decoration: none; font-weight: 600; }
+    .credit-link:hover { text-decoration: underline; }
+    .credit-bar-wrap { background: var(--gray-200); border-radius: 99px; height: 12px; overflow: hidden; margin-bottom: 10px; }
+    .credit-bar-fill { height: 100%; border-radius: 99px; transition: width .6s ease;
+                       background: linear-gradient(90deg, #16A34A, #22C55E); }
+    .credit-bar-fill.warn  { background: linear-gradient(90deg, #D97706, #F59E0B); }
+    .credit-bar-fill.over  { background: linear-gradient(90deg, #DC2626, #EF4444); }
+    .credit-stats { display: flex; justify-content: space-between; font-size: .8rem; color: var(--gray-600); }
+
+    /* ── Section cards ── */
+    .section-card {
+      background: var(--white); border-radius: 14px; padding: 24px 28px;
+      box-shadow: 0 2px 12px rgba(0,0,0,.05); margin-bottom: 28px;
+    }
+    .section-card h3 { font-size: 1rem; font-weight: 700; color: var(--gray-900);
+                       margin-bottom: 18px; padding-bottom: 14px; border-bottom: 1px solid var(--gray-200); }
+
+    /* ── Services table ── */
+    .svc-table { width: 100%; border-collapse: collapse; }
+    .svc-table th {
+      text-align: left; font-size: .75rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: .06em;
+      color: var(--gray-500); padding: 0 12px 12px;
+    }
+    .svc-table th:not(:first-child) { text-align: right; }
+    .svc-table td { padding: 12px; border-top: 1px solid var(--gray-100); font-size: .9rem; }
+    .svc-table td:not(:first-child) { text-align: right; font-variant-numeric: tabular-nums; }
+    .svc-table tr:hover td { background: var(--gray-100); }
+    .badge {
+      display: inline-block; padding: 2px 10px; border-radius: 99px;
+      font-size: .7rem; font-weight: 700; letter-spacing: .04em;
+    }
+    .badge-green { background: var(--green-light); color: var(--green); }
+    .badge-blue  { background: var(--blue-light);  color: var(--blue); }
+    .badge-gray  { background: var(--gray-200);    color: var(--gray-600); }
+
+    /* ── Chart ── */
+    .chart-wrap { position: relative; height: 260px; }
+
+    /* ── Daily table ── */
+    .daily-table { width: 100%; border-collapse: collapse; font-size: .875rem; }
+    .daily-table th {
+      text-align: left; font-size: .75rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .06em; color: var(--gray-500); padding: 0 12px 12px;
+    }
+    .daily-table th:not(:first-child) { text-align: right; }
+    .daily-table td { padding: 10px 12px; border-top: 1px solid var(--gray-100); }
+    .daily-table td:not(:first-child) { text-align: right; font-variant-numeric: tabular-nums; }
+    .daily-table tr:hover td { background: var(--gray-100); }
+    .rate-pill {
+      display: inline-block; padding: 2px 8px; border-radius: 99px;
+      font-size: .72rem; font-weight: 700;
+    }
+    .rate-hi  { background: #DCFCE7; color: #166534; }
+    .rate-mid { background: #FEF3C7; color: #92400E; }
+    .rate-lo  { background: #FEE2E2; color: #991B1B; }
+
+    /* ── Empty / loading ── */
+    .empty { text-align: center; padding: 48px 24px; color: var(--gray-400); font-size: .9rem; }
+    .spinner { display: inline-block; width: 18px; height: 18px; border: 2px solid var(--gray-300);
+               border-top-color: var(--blue); border-radius: 50%; animation: spin .7s linear infinite; vertical-align: middle; margin-right: 8px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Pricing ref ── */
+    .pricing-ref {
+      background: var(--blue-light); border: 1px solid #BFDBFE;
+      border-radius: 12px; padding: 16px 20px; font-size: .8rem; color: var(--gray-700);
+      margin-bottom: 28px; line-height: 1.7;
+    }
+    .pricing-ref strong { color: var(--gray-900); }
+  </style>
+</head>
+<body>
+
+<!-- ── Gate ── -->
+<div id="gate">
+  <div class="gate-card">
+    <img src="assets/img/logo.png" alt="LinkingGo" />
+    <h2>Custos de API</h2>
+    <div id="gate-pass-step">
+      <p>Área restrita — insira a senha para continuar</p>
+      <input type="password" id="gate-pass" placeholder="Senha de administrador"
+             onkeydown="if(event.key==='Enter') checkGate()" />
+      <button onclick="checkGate()">Acessar</button>
+      <div class="gate-error" id="gate-error">Senha incorreta.</div>
+    </div>
+    <div id="gate-login-step" style="display:none">
+      <p>Entre com sua conta LinkingGo</p>
+      <input type="email" id="gate-email" placeholder="seu@email.com"
+             onkeydown="if(event.key==='Enter') handleGateLogin()" />
+      <input type="password" id="gate-loginpass" placeholder="Senha"
+             onkeydown="if(event.key==='Enter') handleGateLogin()" style="margin-top:10px" />
+      <button id="gate-login-btn" onclick="handleGateLogin()" style="margin-top:10px">Entrar</button>
+      <div class="gate-error" id="gate-login-error" style="display:none"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── App ── -->
+<div id="app">
+  <header>
+    <div class="brand">
+      <img src="assets/img/logo.png" alt="LinkingGo" />
+      <span>Custos de API</span>
+    </div>
+    <div style="display:flex;gap:24px;align-items:center">
+      <a href="admin.html">← Admin</a>
+      <a href="index.html">Site</a>
+    </div>
+  </header>
+
+  <div class="layout">
+    <div class="page-title">Painel de Custos — Google Maps Platform</div>
+    <div class="page-sub">Monitoramento de chamadas de API e estimativa de fatura com crédito de $200/mês</div>
+
+    <!-- Controls -->
+    <div class="controls">
+      <label>Período:</label>
+      <select id="month-select" onchange="loadData()"></select>
+    </div>
+
+    <!-- KPIs -->
+    <div class="kpi-grid">
+      <div class="kpi">
+        <div class="kpi-label">Geocoding API</div>
+        <div class="kpi-value" id="kpi-geocode-api">–</div>
+        <div class="kpi-sub">chamadas ao Google</div>
+      </div>
+      <div class="kpi green">
+        <div class="kpi-label">Cache Hits</div>
+        <div class="kpi-value" id="kpi-geocode-cache">–</div>
+        <div class="kpi-sub">chamadas economizadas</div>
+      </div>
+      <div class="kpi blue">
+        <div class="kpi-label">Taxa de Cache</div>
+        <div class="kpi-value" id="kpi-hit-rate">–</div>
+        <div class="kpi-sub">eficiência do cache</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Directions API</div>
+        <div class="kpi-value" id="kpi-directions">–</div>
+        <div class="kpi-sub">chamadas de rota</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Storage — Uploads</div>
+        <div class="kpi-value" id="kpi-storage-uploads">–</div>
+        <div class="kpi-sub">fotos enviadas</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Storage — Volume</div>
+        <div class="kpi-value" id="kpi-storage-bytes">–</div>
+        <div class="kpi-sub">dados transferidos</div>
+      </div>
+      <div class="kpi green">
+        <div class="kpi-label">Economia com Cache</div>
+        <div class="kpi-value" id="kpi-savings">–</div>
+        <div class="kpi-sub">vs. sem cache</div>
+      </div>
+      <div class="kpi" id="kpi-net-card">
+        <div class="kpi-label">Custo Líquido Estimado</div>
+        <div class="kpi-value" id="kpi-net-cost">–</div>
+        <div class="kpi-sub">após crédito $200</div>
+      </div>
+    </div>
+
+    <!-- Credit bar -->
+    <div class="credit-card">
+      <div class="credit-header">
+        <span class="credit-title">💳 Crédito Google Maps Platform — $200,00 / mês</span>
+        <a class="credit-link" href="https://console.cloud.google.com/billing" target="_blank">
+          Ver fatura completa ↗
+        </a>
+      </div>
+      <div class="credit-bar-wrap">
+        <div class="credit-bar-fill" id="credit-bar" style="width:0%"></div>
+      </div>
+      <div class="credit-stats">
+        <span id="credit-used-label">$0,00 usado</span>
+        <span id="credit-remaining-label">$200,00 restante</span>
+      </div>
+    </div>
+
+    <!-- Services breakdown -->
+    <div class="section-card">
+      <h3>Custo por Serviço</h3>
+      <table class="svc-table">
+        <thead>
+          <tr>
+            <th>Serviço</th>
+            <th>Chamadas</th>
+            <th>Preço / 1.000</th>
+            <th>Subtotal (USD)</th>
+            <th>Subtotal (BRL)</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="svc-tbody"></tbody>
+        <tfoot id="svc-tfoot"></tfoot>
+      </table>
+    </div>
+
+    <!-- Chart -->
+    <div class="section-card">
+      <h3>Chamadas de API — últimos 30 dias</h3>
+      <div class="chart-wrap">
+        <canvas id="usage-chart"></canvas>
+      </div>
+    </div>
+
+    <!-- Pricing reference -->
+    <div class="pricing-ref">
+      <strong>Referência de preços — Google Maps Platform (após crédito $200):</strong><br>
+      Geocoding API: $5,00 / 1.000 req &nbsp;·&nbsp;
+      Directions API: $5,00 / 1.000 req &nbsp;·&nbsp;
+      Storage uploads: $0,05 / 10.000 ops &nbsp;·&nbsp;
+      Storage espaço: $0,026 / GB / mês &nbsp;·&nbsp;
+      Câmbio estimado: R$ 5,80 / USD &nbsp;·&nbsp;
+      Cache entries = chamadas futuras gratuitas
+    </div>
+
+    <!-- Daily detail -->
+    <div class="section-card">
+      <h3 id="daily-title">Detalhe Diário</h3>
+      <div id="daily-loading" class="empty"><span class="spinner"></span>Carregando…</div>
+      <table class="daily-table" id="daily-table-el" style="display:none">
+        <thead>
+          <tr>
+            <th>Data</th>
+            <th>Geocode API</th>
+            <th>Cache Hits</th>
+            <th>Hit Rate</th>
+            <th>Directions</th>
+            <th>Custo API (USD)</th>
+            <th>Custo (BRL)</th>
+          </tr>
+        </thead>
+        <tbody id="daily-tbody"></tbody>
+      </table>
+      <div id="daily-empty" class="empty" style="display:none">
+        Nenhum dado registrado para este período.
+      </div>
+    </div>
+
+  </div><!-- /layout -->
+</div><!-- /app -->
+
+<script type="module">
+  import { initializeApp }   from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+  import { getAuth, onAuthStateChanged, signInWithEmailAndPassword }
+    from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+  import { getFirestore, doc, getDoc, collection, query,
+           orderBy, getDocs, where }
+    from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+  const firebaseConfig = {
+    apiKey:            'AIzaSyDnStmxzdXdzIwwqzhiB1tPHOdACOd7MeE',
+    authDomain:        'linkinggo.firebaseapp.com',
+    projectId:         'linkinggo',
+    storageBucket:     'linkinggo.appspot.com',
+    messagingSenderId: '132678928883',
+    appId:             '1:132678928883:web:0aeba7c2ddac5f0e5f45b0',
+  };
+
+  const app  = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db   = getFirestore(app);
+
+  // ── Pricing constants ──────────────────────────────────────
+  const PRICE_PER_1K  = 5.00;   // USD — Geocoding + Directions
+  const GOOGLE_CREDIT = 200.00; // USD monthly credit
+  const USD_BRL       = 5.80;
+
+  // ── Gate logic ─────────────────────────────────────────────
+  const SESSION_KEY = 'lg_admin_unlocked';
+  let adminUnlocked = sessionStorage.getItem(SESSION_KEY) === '1';
+
+  window.checkGate = function () {
+    const pass = document.getElementById('gate-pass').value;
+    if (pass === 'admin_empr1') {
+      adminUnlocked = true;
+      sessionStorage.setItem(SESSION_KEY, '1');
+      if (auth.currentUser) {
+        document.getElementById('gate').style.display = 'none';
+        document.getElementById('app').style.display  = 'block';
+        initPage();
+        return;
+      }
+      document.getElementById('gate-pass-step').style.display  = 'none';
+      document.getElementById('gate-login-step').style.display = 'block';
+    } else {
+      document.getElementById('gate-error').style.display = 'block';
+    }
+  };
+
+  window.handleGateLogin = async function () {
+    const email = document.getElementById('gate-email').value.trim();
+    const pass  = document.getElementById('gate-loginpass').value;
+    const errEl = document.getElementById('gate-login-error');
+    const btn   = document.getElementById('gate-login-btn');
+    btn.textContent = 'Entrando…';
+    btn.disabled = true;
+    errEl.style.display = 'none';
+    try {
+      await signInWithEmailAndPassword(auth, email, pass);
+    } catch (e) {
+      errEl.textContent = 'E-mail ou senha incorretos.';
+      errEl.style.display = 'block';
+      btn.textContent = 'Entrar';
+      btn.disabled = false;
+    }
+  };
+
+  onAuthStateChanged(auth, user => {
+    if (user && adminUnlocked) {
+      document.getElementById('gate').style.display = 'none';
+      document.getElementById('app').style.display  = 'block';
+      initPage();
+    }
+  });
+
+  // ── Month selector ─────────────────────────────────────────
+  function initPage() {
+    const sel = document.getElementById('month-select');
+    const now = new Date();
+    for (let i = 0; i < 6; i++) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const val   = `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}`;
+      const label = d.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+      const opt = document.createElement('option');
+      opt.value = val; opt.textContent = label;
+      sel.appendChild(opt);
+    }
+    loadData();
+    loadChart();
+  }
+
+  // ── Load monthly data ──────────────────────────────────────
+  window.loadData = async function () {
+    const ym    = document.getElementById('month-select').value; // "202603"
+    const year  = ym.slice(0, 4);
+    const month = ym.slice(4, 6);
+    const daysInMonth = new Date(+year, +month, 0).getDate();
+    const start = `${ym}01`;
+    const end   = `${ym}${daysInMonth}`;
+
+    document.getElementById('daily-loading').style.display    = 'block';
+    document.getElementById('daily-table-el').style.display   = 'none';
+    document.getElementById('daily-empty').style.display      = 'none';
+
+    const q = query(
+      collection(db, 'usageCounters'),
+      where('__name__', '>=', start),
+      where('__name__', '<=', end),
+      orderBy('__name__', 'asc'),
+    );
+    const snap = await getDocs(q);
+
+    const days = [];
+    snap.forEach(d => days.push({ id: d.id, ...d.data() }));
+
+    // Totals
+    let totalGeoApi        = 0;
+    let totalCache         = 0;
+    let totalDir           = 0;
+    let totalStorageUploads = 0;
+    let totalStorageBytes   = 0;
+    days.forEach(d => {
+      totalGeoApi         += d.geocodeApi      || 0;
+      totalCache          += d.geocodeCache    || 0;
+      totalDir            += d.directions      || 0;
+      totalStorageUploads += d.storageUploads  || 0;
+      totalStorageBytes   += d.storageBytes    || 0;
+    });
+
+    const totalCalls   = totalGeoApi + totalCache;
+    const hitRate      = totalCalls > 0 ? (totalCache / totalCalls * 100).toFixed(1) : '–';
+    const savedCalls   = totalCache;
+    const savingsUSD   = (savedCalls / 1000) * PRICE_PER_1K;
+    const geoUSD       = (totalGeoApi / 1000) * PRICE_PER_1K;
+    const dirUSD       = (totalDir    / 1000) * PRICE_PER_1K;
+    // Storage: $0.05/10k upload ops + $0.026/GB/month stored
+    const storageUSD   = (totalStorageUploads / 10000) * 0.05
+                       + (totalStorageBytes / 1e9) * 0.026;
+    const totalUSD     = geoUSD + dirUSD + storageUSD;
+    const creditUsed   = Math.min(totalUSD, GOOGLE_CREDIT);
+    const netUSD       = Math.max(0, totalUSD - GOOGLE_CREDIT);
+    const netBRL       = netUSD * USD_BRL;
+
+    // ── KPIs ──
+    setText('kpi-geocode-api',   totalGeoApi.toLocaleString('pt-BR'));
+    setText('kpi-geocode-cache', totalCache.toLocaleString('pt-BR'));
+    setText('kpi-hit-rate',      totalCalls > 0 ? `${hitRate}%` : '–');
+    setText('kpi-directions',       totalDir.toLocaleString('pt-BR'));
+    setText('kpi-storage-uploads', totalStorageUploads.toLocaleString('pt-BR'));
+    setText('kpi-storage-bytes',   formatBytes(totalStorageBytes));
+    setText('kpi-savings',       `R$ ${(savingsUSD * USD_BRL).toFixed(2).replace('.',',')}`);
+    setText('kpi-net-cost',      `R$ ${netBRL.toFixed(2).replace('.',',')}`);
+
+    const netCard = document.getElementById('kpi-net-card');
+    netCard.className = 'kpi ' + (netUSD === 0 ? 'green' : netUSD < 50 ? '' : 'red');
+
+    // ── Credit bar ──
+    const pct     = Math.min((creditUsed / GOOGLE_CREDIT) * 100, 100);
+    const bar     = document.getElementById('credit-bar');
+    bar.style.width = `${pct}%`;
+    bar.className   = 'credit-bar-fill' + (pct >= 100 ? ' over' : pct >= 75 ? ' warn' : '');
+    setText('credit-used-label',      `$${creditUsed.toFixed(2)} usado`);
+    setText('credit-remaining-label', `$${Math.max(0, GOOGLE_CREDIT - totalUSD).toFixed(2)} restante`);
+
+    // ── Services table ──
+    const services = [
+      {
+        name: 'Geocoding API',
+        badge: 'badge-blue',
+        badgeText: 'Google Maps',
+        calls: totalGeoApi,
+        price: PRICE_PER_1K,
+        usd: geoUSD,
+      },
+      {
+        name: 'Directions API',
+        badge: 'badge-blue',
+        badgeText: 'Google Maps',
+        calls: totalDir,
+        price: PRICE_PER_1K,
+        usd: dirUSD,
+      },
+      {
+        name: 'Firebase Storage',
+        badge: 'badge-gray',
+        badgeText: 'Firebase',
+        calls: totalStorageUploads,
+        callsLabel: `${totalStorageUploads} uploads · ${formatBytes(totalStorageBytes)}`,
+        price: null,
+        priceLabel: '$0,05/10k ops',
+        usd: storageUSD,
+      },
+      {
+        name: 'Cache (Firestore)',
+        badge: 'badge-green',
+        badgeText: 'Gratuito',
+        calls: totalCache,
+        price: 0,
+        usd: 0,
+      },
+    ];
+
+    const tbody = document.getElementById('svc-tbody');
+    tbody.innerHTML = services.map(s => `
+      <tr>
+        <td>${s.name}</td>
+        <td>${s.callsLabel ?? s.calls.toLocaleString('pt-BR')}</td>
+        <td>${s.priceLabel ?? (s.price > 0 ? `$${s.price.toFixed(2)}` : '—')}</td>
+        <td>${s.usd > 0 ? `$${s.usd.toFixed(4)}` : '$0,0000'}</td>
+        <td>${s.usd > 0 ? `R$ ${(s.usd * USD_BRL).toFixed(2).replace('.',',')}` : 'R$ 0,00'}</td>
+        <td><span class="badge ${s.badge}">${s.badgeText}</span></td>
+      </tr>
+    `).join('');
+
+    document.getElementById('svc-tfoot').innerHTML = `
+      <tr style="border-top:2px solid var(--gray-200)">
+        <td colspan="3" style="padding:12px;font-weight:700;color:var(--gray-900)">Total antes do crédito</td>
+        <td style="padding:12px;text-align:right;font-weight:700">$${totalUSD.toFixed(4)}</td>
+        <td style="padding:12px;text-align:right;font-weight:700">R$ ${(totalUSD * USD_BRL).toFixed(2).replace('.',',')}</td>
+        <td></td>
+      </tr>
+      <tr>
+        <td colspan="3" style="padding:4px 12px 12px;color:var(--green);font-weight:600">— Crédito Google ($200)</td>
+        <td style="padding:4px 12px 12px;text-align:right;color:var(--green);font-weight:600">-$${creditUsed.toFixed(4)}</td>
+        <td style="padding:4px 12px 12px;text-align:right;color:var(--green);font-weight:600">-R$ ${(creditUsed * USD_BRL).toFixed(2).replace('.',',')}</td>
+        <td></td>
+      </tr>
+      <tr style="background:var(--gray-100)">
+        <td colspan="3" style="padding:12px;font-weight:800;color:var(--gray-900);font-size:1rem">CUSTO LÍQUIDO</td>
+        <td style="padding:12px;text-align:right;font-weight:800;font-size:1rem;color:${netUSD>0?'#DC2626':'#16A34A'}">$${netUSD.toFixed(4)}</td>
+        <td style="padding:12px;text-align:right;font-weight:800;font-size:1rem;color:${netUSD>0?'#DC2626':'#16A34A'}">R$ ${netBRL.toFixed(2).replace('.',',')}</td>
+        <td></td>
+      </tr>
+    `;
+
+    // ── Daily table ──
+    document.getElementById('daily-loading').style.display = 'none';
+    if (days.length === 0) {
+      document.getElementById('daily-empty').style.display = 'block';
+      return;
+    }
+    document.getElementById('daily-table-el').style.display = 'table';
+
+    const selectedMonth = ym.slice(4, 6) + '/' + ym.slice(0, 4);
+    document.getElementById('daily-title').textContent = `Detalhe Diário — ${selectedMonth}`;
+
+    const tbodyD = document.getElementById('daily-tbody');
+    tbodyD.innerHTML = [...days].reverse().map(d => {
+      const gApi  = d.geocodeApi   || 0;
+      const cache = d.geocodeCache || 0;
+      const dir   = d.directions   || 0;
+      const total = gApi + cache;
+      const rate  = total > 0 ? (cache / total * 100) : null;
+      const dayUSD = ((gApi + dir) / 1000) * PRICE_PER_1K;
+      const dayBRL = dayUSD * USD_BRL;
+      const dateStr = `${d.id.slice(6,8)}/${d.id.slice(4,6)}/${d.id.slice(0,4)}`;
+
+      let ratePill = '–';
+      if (rate !== null) {
+        const cls = rate >= 60 ? 'rate-hi' : rate >= 30 ? 'rate-mid' : 'rate-lo';
+        ratePill = `<span class="rate-pill ${cls}">${rate.toFixed(0)}%</span>`;
+      }
+
+      return `<tr>
+        <td>${dateStr}</td>
+        <td>${gApi.toLocaleString('pt-BR')}</td>
+        <td>${cache.toLocaleString('pt-BR')}</td>
+        <td>${ratePill}</td>
+        <td>${dir.toLocaleString('pt-BR')}</td>
+        <td>$${dayUSD.toFixed(4)}</td>
+        <td>R$ ${dayBRL.toFixed(2).replace('.',',')}</td>
+      </tr>`;
+    }).join('');
+  };
+
+  // ── Chart: last 30 days ────────────────────────────────────
+  let chartInstance = null;
+
+  async function loadChart() {
+    const end   = new Date();
+    const start = new Date(); start.setDate(end.getDate() - 29);
+
+    const startKey = dateKey(start);
+    const endKey   = dateKey(end);
+
+    const q = query(
+      collection(db, 'usageCounters'),
+      where('__name__', '>=', startKey),
+      where('__name__', '<=', endKey),
+      orderBy('__name__', 'asc'),
+    );
+    const snap = await getDocs(q);
+
+    const dataMap = {};
+    snap.forEach(d => { dataMap[d.id] = d.data(); });
+
+    const labels   = [];
+    const geoData  = [];
+    const cacheData = [];
+    const dirData  = [];
+
+    for (let i = 0; i < 30; i++) {
+      const d = new Date(start);
+      d.setDate(start.getDate() + i);
+      const key   = dateKey(d);
+      const label = `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}`;
+      labels.push(label);
+      geoData.push(dataMap[key]?.geocodeApi   || 0);
+      cacheData.push(dataMap[key]?.geocodeCache || 0);
+      dirData.push(dataMap[key]?.directions   || 0);
+    }
+
+    if (chartInstance) chartInstance.destroy();
+    chartInstance = new Chart(document.getElementById('usage-chart'), {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [
+          {
+            label: 'Geocode API',
+            data: geoData,
+            backgroundColor: 'rgba(37,99,235,0.75)',
+            borderRadius: 4,
+            stack: 'calls',
+          },
+          {
+            label: 'Cache Hits',
+            data: cacheData,
+            backgroundColor: 'rgba(22,163,74,0.75)',
+            borderRadius: 4,
+            stack: 'calls',
+          },
+          {
+            label: 'Directions',
+            data: dirData,
+            backgroundColor: 'rgba(245,158,11,0.75)',
+            borderRadius: 4,
+            stack: 'calls',
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'top', labels: { font: { family: 'Inter', size: 12 }, boxWidth: 14 } },
+          tooltip: {
+            callbacks: {
+              footer: items => {
+                const geoApi = items.find(i => i.dataset.label === 'Geocode API')?.raw || 0;
+                const dir    = items.find(i => i.dataset.label === 'Directions')?.raw || 0;
+                const usd    = ((geoApi + dir) / 1000) * PRICE_PER_1K;
+                return `Custo: $${usd.toFixed(4)} / R$ ${(usd * USD_BRL).toFixed(2)}`;
+              },
+            },
+          },
+        },
+        scales: {
+          x: { stacked: true, grid: { display: false }, ticks: { font: { size: 11 }, maxRotation: 45 } },
+          y: { stacked: true, beginAtZero: true, ticks: { font: { size: 11 } } },
+        },
+      },
+    });
+  }
+
+  // ── Helpers ───────────────────────────────────────────────
+  function formatBytes(bytes) {
+    if (bytes < 1024)       return `${bytes} B`;
+    if (bytes < 1048576)    return `${(bytes/1024).toFixed(1)} KB`;
+    if (bytes < 1073741824) return `${(bytes/1048576).toFixed(1)} MB`;
+    return `${(bytes/1073741824).toFixed(2)} GB`;
+  }
+
+  function dateKey(d) {
+    return `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`;
+  }
+  function setText(id, val) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = val;
+  }
+</script>
+</body>
+</html>

@@ -377,13 +377,18 @@
 
       // Create company document
       await setDoc(doc(db, 'companies', companyId), {
-        name:          companyName,
-        managerUid:    uid,
-        managerEmail:  email,
-        plan:          'starter',
-        active:        true,
-        shortCode:     shortCode,
-        createdAt:     serverTimestamp(),
+        name:                  companyName,
+        managerUid:            uid,
+        managerEmail:          email,
+        plan:                  'starter',
+        active:                true,
+        shortCode:             shortCode,
+        createdAt:             serverTimestamp(),
+        paymentStatus:         'TRIAL',
+        driverLimit:           10,
+        driverLinkedCount:     0,
+        trialEndsAt:           Date.now() + 30 * 24 * 60 * 60 * 1000,
+        subscriptionExpiresAt: null,
       });
 
       // Reverse lookup: shortCode → companyId

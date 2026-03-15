@@ -1,0 +1,71 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── Helpers ──────────────────────────────────────────────
+    function isAuth() {
+      return request.auth != null;
+    }
+    function isOwner(uid) {
+      return isAuth() && request.auth.uid == uid;
+    }
+
+    // ── Drivers ──────────────────────────────────────────────
+    match /drivers/{uid} {
+      allow read:  if isAuth();
+      allow write: if isOwner(uid);
+
+      // Subcoleção de fotos de entrega
+      match /photos/{photoId} {
+        allow read:  if isAuth();
+        allow write: if isOwner(uid);
+      }
+    }
+
+    // ── Driver locations ──────────────────────────────────────
+    match /driverLocations/{uid} {
+      allow read:  if isAuth();
+      allow write: if isOwner(uid);
+    }
+
+    // ── Routes ───────────────────────────────────────────────
+    match /routes/{routeId} {
+      allow read:  if isAuth();
+      allow write: if isAuth();
+    }
+
+    // ── Companies ────────────────────────────────────────────
+    match /companies/{companyId} {
+      allow read:  if isAuth();
+      allow write: if isAuth();
+    }
+
+    // ── Company codes ─────────────────────────────────────────
+    match /companyCodes/{code} {
+      allow read:  if isAuth();
+      allow write: if isAuth();
+    }
+
+    // ── Company driver links (audit) ──────────────────────────
+    match /companyDriverLinks/{linkId} {
+      allow read:  if isAuth();
+      allow write: if isAuth();
+    }
+
+    // ── Users (managers / gestors) ───────────────────────────
+    match /users/{uid} {
+      allow read:  if isAuth();
+      allow write: if isOwner(uid);
+    }
+
+    // ── Geocoding cache — any authenticated user ──────────────
+    match /geocodeCache/{hash} {
+      allow read, write: if isAuth();
+    }
+
+    // ── API usage counters — any authenticated user ───────────
+    match /usageCounters/{date} {
+      allow read, write: if isAuth();
+    }
+  }
+}

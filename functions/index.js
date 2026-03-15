@@ -15,9 +15,10 @@
  */
 
 const {onRequest} = require('firebase-functions/v2/https');
+const {onSchedule} = require('firebase-functions/v2/scheduler');
 const {defineSecret} = require('firebase-functions/params');
 const {initializeApp} = require('firebase-admin/app');
-const {getFirestore} = require('firebase-admin/firestore');
+const {getFirestore, FieldValue} = require('firebase-admin/firestore');
 
 initializeApp();
 const db = getFirestore();
@@ -83,6 +84,16 @@ exports.createSubscription = onRequest(
       return;
     }
 
+    // Verifica desconto 10% para driver vinculado a empresa ativa
+    let discountApplied = false;
+    const driverData = driverSnap.data() || {};
+    if (driverData.activeCompany) {
+      const compSnap = await db.collection('companies').doc(driverData.activeCompany).get();
+      if (compSnap.exists && compSnap.data().paymentStatus !== 'BLOCKED') {
+        discountApplied = true;
+      }
+    }
+
     try {
       const token  = PAGBANK_TOKEN.value();
       const planId = PAGBANK_PLAN_ID.value();
@@ -116,7 +127,7 @@ exports.createSubscription = onRequest(
         premiumExpiresAt:   nextBillingMs,
       }, {merge: true});
 
-      res.status(200).json({success: true, subscriptionId: result.id});
+      res.status(200).json({success: true, subscriptionId: result.id, discountApplied});
     } catch (err) {
       console.error('[createSubscription]', err.message);
       res.status(500).json({error: err.message});
@@ -143,10 +154,20 @@ exports.createPixCharge = onRequest(
     }
 
     // Verifica se o driver existe
-    const driverSnap = await db.collection('drivers').doc(uid).get();
-    if (!driverSnap.exists) {
+    const pixDriverSnap = await db.collection('drivers').doc(uid).get();
+    if (!pixDriverSnap.exists) {
       res.status(404).json({error: 'Motorista não encontrado.'});
       return;
+    }
+
+    // Verifica desconto 10% para driver vinculado a empresa ativa
+    let pixAmount = 2990;
+    const pixDriverData = pixDriverSnap.data() || {};
+    if (pixDriverData.activeCompany) {
+      const compSnap = await db.collection('companies').doc(pixDriverData.activeCompany).get();
+      if (compSnap.exists && compSnap.data().paymentStatus !== 'BLOCKED') {
+        pixAmount = 2691; // R$26,91 (10% off)
+      }
     }
 
     try {
@@ -163,10 +184,10 @@ exports.createPixCharge = onRequest(
         items: [{
           name:        'LinkingGo Premium — 30 dias',
           quantity:    1,
-          unit_amount: 2990,
+          unit_amount: pixAmount,
         }],
         qr_codes: [{
-          amount: {value: 2990},
+          amount: {value: pixAmount},
           expiration_date: expiresAt,
         }],
       };
@@ -187,6 +208,192 @@ exports.createPixCharge = onRequest(
       res.status(500).json({error: err.message});
     }
   },
+);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// linkDriverToCompany — vincula motorista a empresa via código de 6 dígitos
+// Body: { uid, companyCode }
+// ─────────────────────────────────────────────────────────────────────────────
+exports.linkDriverToCompany = onRequest(async (req, res) => {
+  setCors(res);
+  if (req.method === 'OPTIONS') { res.status(204).send(''); return; }
+  if (req.method !== 'POST')    { res.status(405).send('Method Not Allowed'); return; }
+
+  const {uid, companyCode} = req.body || {};
+  if (!uid || !companyCode) {
+    res.status(400).json({error: 'Campos obrigatórios ausentes.'});
+    return;
+  }
+
+  const code = companyCode.toString().trim();
+  if (code.length !== 6) {
+    res.status(400).json({error: 'Código deve ter 6 dígitos.'});
+    return;
+  }
+
+  try {
+    // 1. Lookup companyId via short code
+    const codeSnap = await db.collection('companyCodes').doc(code).get();
+    if (!codeSnap.exists) {
+      res.status(404).json({error: 'Código não encontrado. Verifique com o gestor.'});
+      return;
+    }
+    const companyId = codeSnap.data().companyId;
+
+    const companyRef = db.collection('companies').doc(companyId);
+    const driverRef  = db.collection('drivers').doc(uid);
+
+    // 2. Transação atômica: valida e executa vínculo
+    const result = await db.runTransaction(async tx => {
+      const [companySnap, driverSnap] = await Promise.all([
+        tx.get(companyRef),
+        tx.get(driverRef),
+      ]);
+
+      if (!companySnap.exists) throw new Error('Empresa não encontrada.');
+      const company = companySnap.data();
+
+      if (!company.active) throw new Error('Empresa inativa.');
+      if (company.paymentStatus === 'BLOCKED') {
+        throw new Error('Empresa com pagamento bloqueado. Contate o gestor.');
+      }
+
+      const linkedCount = company.driverLinkedCount || 0;
+      const limit       = company.driverLimit || 0;
+      if (linkedCount >= limit) throw new Error('Empresa sem vagas disponíveis.');
+
+      const driver = driverSnap.data() || {};
+      if (driver.activeCompany) throw new Error('Você já está vinculado a uma empresa.');
+
+      const now = Date.now();
+      tx.update(companyRef, {driverLinkedCount: FieldValue.increment(1)});
+      tx.set(driverRef, {
+        activeCompany:    companyId,
+        companyLinkedAt:  now,
+        companyRemovedAt: null,
+      }, {merge: true});
+      tx.set(db.collection('companyDriverLinks').doc(), {
+        driverId:  uid,
+        companyId: companyId,
+        status:    'active',
+        linkedAt:  now,
+      });
+
+      return {companyName: company.name, paymentStatus: company.paymentStatus};
+    });
+
+    res.status(200).json({
+      success:       true,
+      companyId,
+      companyName:   result.companyName,
+      paymentStatus: result.paymentStatus,
+    });
+  } catch (err) {
+    console.error('[linkDriverToCompany]', err.message);
+    const status = err.message.includes('não encontrad') ? 404 : 400;
+    res.status(status).json({error: err.message});
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// dailyCleanup — limpeza automática de histórico de entregas
+//
+// Regras:
+//   1. Rotas com mais de 30 dias → deletar (todos os usuários)
+//   2. Rotas de drivers cujo trial expirou no dia 12 sem assinar → deletar
+//
+// Roda diariamente às 03:00 (horário de Brasília)
+// Requer Cloud Scheduler API ativada no projeto GCP (plano Blaze)
+// ─────────────────────────────────────────────────────────────────────────────
+exports.dailyCleanup = onSchedule(
+  {schedule: 'every day 03:00', timeZone: 'America/Sao_Paulo'},
+  async () => {
+    const now          = Date.now();
+    const THIRTY_DAYS  = 30 * 24 * 60 * 60 * 1000;
+    const TWELVE_DAYS  = 12 * 24 * 60 * 60 * 1000;
+    let totalDeleted   = 0;
+
+    // Helper: deleta um array de DocumentRefs em batches de 500
+    async function batchDelete(refs) {
+      if (refs.length === 0) return;
+      for (let i = 0; i < refs.length; i += 500) {
+        const batch = db.batch();
+        refs.slice(i, i + 500).forEach(ref => batch.delete(ref));
+        await batch.commit();
+      }
+    }
+
+    // ── Regra 1: rotas com mais de 30 dias (todos os usuários) ──────────────
+    const oldSnap = await db.collection('routes')
+      .where('createdAt', '<', now - THIRTY_DAYS)
+      .get();
+
+    await batchDelete(oldSnap.docs.map(d => d.ref));
+    totalDeleted += oldSnap.size;
+    console.log(`[dailyCleanup] Regra 30d: ${oldSnap.size} rotas deletadas`);
+
+    // ── Regra 2: trial expirado no dia 12 sem Premium nem empresa ───────────
+    const trialExpiredSnap = await db.collection('drivers')
+      .where('createdAt', '<', now - TWELVE_DAYS)
+      .get();
+
+    // Filtra em código: sem Premium e sem empresa vinculada
+    const expiredUids = trialExpiredSnap.docs
+      .filter(doc => {
+        const d = doc.data();
+        return !d.isPremium && !d.activeCompany;
+      })
+      .map(doc => doc.id);
+
+    if (expiredUids.length > 0) {
+      // Busca as rotas de cada driver em paralelo (chunks de 10)
+      const routeRefs = [];
+      for (let i = 0; i < expiredUids.length; i += 10) {
+        const chunk = expiredUids.slice(i, i + 10);
+        const snaps = await Promise.all(
+          chunk.map(uid =>
+            db.collection('routes').where('driverId', '==', uid).get()
+          )
+        );
+        snaps.forEach(snap => snap.docs.forEach(doc => routeRefs.push(doc.ref)));
+      }
+
+      await batchDelete(routeRefs);
+      totalDeleted += routeRefs.length;
+      console.log(
+        `[dailyCleanup] Regra 12d: ${routeRefs.length} rotas de` +
+        ` ${expiredUids.length} drivers sem Premium deletadas`
+      );
+    }
+
+    console.log(`[dailyCleanup] Total deletado: ${totalDeleted} rotas`);
+
+    // ── Regra 3: Empresas em TRIAL com trialEndsAt expirado → OVERDUE ────────
+    const trialCompaniesSnap = await db.collection('companies')
+      .where('paymentStatus', '==', 'TRIAL')
+      .where('trialEndsAt', '<', now)
+      .get();
+
+    if (!trialCompaniesSnap.empty) {
+      const batch = db.batch();
+      trialCompaniesSnap.docs.forEach(d => batch.update(d.ref, {paymentStatus: 'OVERDUE'}));
+      await batch.commit();
+      console.log(`[dailyCleanup] ${trialCompaniesSnap.size} empresa(s) TRIAL → OVERDUE`);
+    }
+
+    // ── Regra 4: Empresas ACTIVE com subscriptionExpiresAt expirado → OVERDUE
+    const activeCompaniesSnap = await db.collection('companies')
+      .where('paymentStatus', '==', 'ACTIVE')
+      .where('subscriptionExpiresAt', '<', now)
+      .get();
+
+    if (!activeCompaniesSnap.empty) {
+      const batch = db.batch();
+      activeCompaniesSnap.docs.forEach(d => batch.update(d.ref, {paymentStatus: 'OVERDUE'}));
+      await batch.commit();
+      console.log(`[dailyCleanup] ${activeCompaniesSnap.size} empresa(s) ACTIVE → OVERDUE`);
+    }
+  }
 );
 
 // ─────────────────────────────────────────────────────────────────────────────
