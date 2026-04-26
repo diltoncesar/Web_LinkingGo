@@ -1,0 +1,11 @@
+# Firebase deploy cache
+.firebase/
+
+# Cloud Functions dependencies
+functions/node_modules/
+
+# Environment variables (secrets)
+functions/.env
+
+# OS
+.DS_Store

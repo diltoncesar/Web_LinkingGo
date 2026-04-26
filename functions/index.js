@@ -26,9 +26,13 @@ const db = getFirestore();
 // ── Secrets ────────────────────────────────────────────────────────────────
 const PAGBANK_TOKEN   = defineSecret('PAGBANK_TOKEN');
 const PAGBANK_PLAN_ID = defineSecret('PAGBANK_PLAN_ID');
+const ADMIN_SECRET    = defineSecret('ADMIN_SECRET');
 
-// ── Ambiente PagBank (troque para produção quando sair do sandbox) ─────────
-const PAGBANK_BASE = 'https://sandbox.api.pagseguro.com';
+// ── Ambiente PagBank ───────────────────────────────────────────────────────
+// Para ir para produção: altere PAGBANK_ENV=production em functions/.env e faça redeploy
+const PAGBANK_BASE = process.env.PAGBANK_ENV === 'production'
+  ? 'https://api.pagseguro.com'
+  : 'https://sandbox.api.pagseguro.com';
 
 // ── Helper: requisição autenticada para o PagBank ─────────────────────────
 async function pagbankRequest(token, method, path, body) {
@@ -36,7 +40,7 @@ async function pagbankRequest(token, method, path, body) {
   const res = await fetch(`${PAGBANK_BASE}${path}`, {
     method,
     headers: {
-      Authorization: `Bearer ${token}`,
+      Authorization: `Bearer ${token.trim()}`,
       'Content-Type': 'application/json',
     },
     body: body ? JSON.stringify(body) : undefined,
@@ -55,7 +59,7 @@ async function pagbankRequest(token, method, path, body) {
 function setCors(res) {
   res.set('Access-Control-Allow-Origin', '*');
   res.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.set('Access-Control-Allow-Headers', 'Content-Type');
+  res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-admin-secret');
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -148,7 +152,7 @@ exports.createPixCharge = onRequest(
 
     const {uid, email, name, taxId} = req.body || {};
 
-    if (!uid || !email || !name) {
+    if (!uid || !name) {
       res.status(400).json({error: 'Campos obrigatórios ausentes.'});
       return;
     }
@@ -161,12 +165,12 @@ exports.createPixCharge = onRequest(
     }
 
     // Verifica desconto 10% para driver vinculado a empresa ativa
-    let pixAmount = 2990;
+    let pixAmount = 5; // TODO: voltar para 2990 (R$29,90) após testes
     const pixDriverData = pixDriverSnap.data() || {};
     if (pixDriverData.activeCompany) {
       const compSnap = await db.collection('companies').doc(pixDriverData.activeCompany).get();
       if (compSnap.exists && compSnap.data().paymentStatus !== 'BLOCKED') {
-        pixAmount = 2691; // R$26,91 (10% off)
+        pixAmount = 5; // TODO: voltar para 2691 (R$26,91) após testes
       }
     }
 
@@ -174,13 +178,12 @@ exports.createPixCharge = onRequest(
       const token = PAGBANK_TOKEN.value();
       const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
 
+      const customer = {name};
+      if (taxId) { customer.tax_id = taxId.replace(/\D/g, ''); }
+
       const payload = {
         reference_id: uid,
-        customer: {
-          name,
-          email,
-          tax_id: (taxId || '00000000000').replace(/\D/g, ''),
-        },
+        customer,
         items: [{
           name:        'LinkingGo Premium — 30 dias',
           quantity:    1,
@@ -190,6 +193,7 @@ exports.createPixCharge = onRequest(
           amount: {value: pixAmount},
           expiration_date: expiresAt,
         }],
+        notification_urls: ['https://pagbankwebhook-bqwrf4cd6q-uc.a.run.app'],
       };
 
       const result = await pagbankRequest(token, 'POST', '/orders', payload);
@@ -392,6 +396,121 @@ exports.dailyCleanup = onSchedule(
       activeCompaniesSnap.docs.forEach(d => batch.update(d.ref, {paymentStatus: 'OVERDUE'}));
       await batch.commit();
       console.log(`[dailyCleanup] ${activeCompaniesSnap.size} empresa(s) ACTIVE → OVERDUE`);
+    }
+
+    // ── Regra 5: Drivers autônomos com premiumExpiresAt vencido → OVERDUE ────
+    const overdueDriversSnap = await db.collection('drivers')
+      .where('isPremium', '==', true)
+      .where('premiumExpiresAt', '<', now)
+      .get();
+
+    if (!overdueDriversSnap.empty) {
+      const batch = db.batch();
+      overdueDriversSnap.docs.forEach(d =>
+        batch.update(d.ref, {isPremium: false, subscriptionStatus: 'overdue'})
+      );
+      await batch.commit();
+      console.log(`[dailyCleanup] ${overdueDriversSnap.size} driver(s) premium vencido → overdue`);
+    }
+  }
+);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// registerDevice — registra ou valida o dispositivo do driver (1 device por conta)
+// Header: Authorization: Bearer <Firebase ID Token>
+// Body: { deviceId, deviceModel }
+// ─────────────────────────────────────────────────────────────────────────────
+const {getAuth} = require('firebase-admin/auth');
+
+exports.registerDevice = onRequest(async (req, res) => {
+  setCors(res);
+  if (req.method === 'OPTIONS') { res.status(204).send(''); return; }
+  if (req.method !== 'POST')    { res.status(405).send('Method Not Allowed'); return; }
+
+  try {
+    // Verifica o Firebase ID token
+    const authHeader = req.headers.authorization || '';
+    const idToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
+    if (!idToken) {
+      res.status(401).json({error: 'Token de autenticação ausente.'});
+      return;
+    }
+    const decoded = await getAuth().verifyIdToken(idToken);
+    const uid = decoded.uid;
+
+    const {deviceId, deviceModel} = req.body || {};
+    if (!deviceId) {
+      res.status(400).json({error: 'deviceId obrigatório.'});
+      return;
+    }
+
+    const driverRef = db.collection('drivers').doc(uid);
+
+    const result = await db.runTransaction(async tx => {
+      const snap = await tx.get(driverRef);
+      const stored = snap.exists ? (snap.data().deviceId || null) : null;
+
+      if (!stored || stored === deviceId) {
+        // Primeiro registro ou mesmo dispositivo — atualiza lastSeen
+        tx.set(driverRef, {
+          deviceId,
+          deviceModel: deviceModel || null,
+          deviceLastSeen: Date.now(),
+        }, {merge: true});
+        return {success: true};
+      }
+
+      // Dispositivo diferente do registrado
+      return {error: 'device_conflict'};
+    });
+
+    if (result.error) {
+      res.status(403).json(result);
+      return;
+    }
+    res.status(200).json(result);
+  } catch (err) {
+    console.error('[registerDevice]', err.message);
+    res.status(500).json({error: err.message});
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// resetDriverDevice — admin reseta o dispositivo vinculado de um driver
+// Header: x-admin-secret: <ADMIN_SECRET>
+// Body: { targetUid }
+// ─────────────────────────────────────────────────────────────────────────────
+exports.resetDriverDevice = onRequest(
+  {secrets: [ADMIN_SECRET]},
+  async (req, res) => {
+    setCors(res);
+    if (req.method === 'OPTIONS') { res.status(204).send(''); return; }
+    if (req.method !== 'POST')    { res.status(405).send('Method Not Allowed'); return; }
+
+    const secret = req.headers['x-admin-secret'];
+    if (!secret || secret !== ADMIN_SECRET.value()) {
+      res.status(403).json({error: 'Acesso negado.'});
+      return;
+    }
+
+    const {targetUid} = req.body || {};
+    if (!targetUid) {
+      res.status(400).json({error: 'targetUid obrigatório.'});
+      return;
+    }
+
+    try {
+      await db.collection('drivers').doc(targetUid).set({
+        deviceId:       null,
+        deviceModel:    null,
+        deviceLastSeen: null,
+      }, {merge: true});
+
+      console.log(`[resetDriverDevice] dispositivo resetado para uid=${targetUid}`);
+      res.status(200).json({success: true, uid: targetUid});
+    } catch (err) {
+      console.error('[resetDriverDevice]', err.message);
+      res.status(500).json({error: err.message});
     }
   }
 );

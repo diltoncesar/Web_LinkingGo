@@ -433,6 +433,24 @@
         </div>
       </div>
 
+      <!-- ── Resetar Dispositivo ── -->
+      <div class="card">
+        <h3>🔒 Resetar Dispositivo de Driver</h3>
+        <p style="font-size:.85rem;color:#6B7280;margin:0 0 12px">
+          Use quando o motorista trocar de celular e precisar vincular o novo dispositivo.
+        </p>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <input type="text" id="reset-device-uid" placeholder="UID do driver"
+            style="flex:1;min-width:220px;padding:8px 10px;border:1px solid #D1D5DB;border-radius:6px;font-size:.85rem" />
+          <button class="btn btn-secondary" onclick="lookupDriverDevice()"
+            style="white-space:nowrap">🔍 Consultar</button>
+          <button class="btn btn-danger" onclick="resetDriverDevice()"
+            style="white-space:nowrap">Resetar Dispositivo</button>
+        </div>
+        <div id="device-info" style="margin-top:10px;font-size:.82rem;color:#374151;min-height:20px"></div>
+        <div id="device-reset-result" style="margin-top:6px;font-size:.82rem;min-height:16px"></div>
+      </div>
+
     </div>
   </div>
 </div>
@@ -692,6 +710,66 @@
       companyMsg(companyId, `✓ Driver ${driverUid.slice(0, 8)}… removido.`);
       document.getElementById(`rm-${companyId}`).value = '';
     } catch (e) { companyMsg(companyId, 'Erro: ' + e.message, false); }
+  };
+
+  // ── Device management ──────────────────────────────────────
+  const FUNCTIONS_BASE = 'https://us-central1-linkinggo.cloudfunctions.net';
+
+  window.lookupDriverDevice = async function() {
+    const uid = document.getElementById('reset-device-uid').value.trim();
+    if (!uid) return;
+    const infoEl = document.getElementById('device-info');
+    infoEl.textContent = 'Consultando...';
+    try {
+      const snap = await getDoc(doc(db, 'drivers', uid));
+      if (!snap.exists()) { infoEl.textContent = '⚠️ Driver não encontrado.'; return; }
+      const d = snap.data();
+      const model   = d.deviceModel || '—';
+      const lastSeen = d.deviceLastSeen
+        ? new Date(d.deviceLastSeen).toLocaleString('pt-BR')
+        : '—';
+      const devId = d.deviceId ? d.deviceId.slice(0, 12) + '…' : 'Nenhum';
+      infoEl.innerHTML =
+        `<strong>Nome:</strong> ${d.name || '—'} &nbsp;|&nbsp; ` +
+        `<strong>Modelo:</strong> ${model} &nbsp;|&nbsp; ` +
+        `<strong>Último acesso:</strong> ${lastSeen} &nbsp;|&nbsp; ` +
+        `<strong>Device ID:</strong> <code>${devId}</code>`;
+    } catch (e) {
+      infoEl.textContent = 'Erro: ' + e.message;
+    }
+  };
+
+  window.resetDriverDevice = async function() {
+    const uid = document.getElementById('reset-device-uid').value.trim();
+    if (!uid) { alert('Informe o UID do driver.'); return; }
+    if (!confirm(`Resetar dispositivo do driver ${uid}?\nEle poderá logar em um novo celular.`)) return;
+
+    const resultEl = document.getElementById('device-reset-result');
+    resultEl.textContent = 'Resetando...';
+    resultEl.style.color = '#6B7280';
+
+    try {
+      const res = await fetch(`${FUNCTIONS_BASE}/resetDriverDevice`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-admin-secret': 'lg_admin_secret_2026',
+        },
+        body: JSON.stringify({targetUid: uid}),
+      });
+      const data = await res.json();
+      if (data.success) {
+        resultEl.textContent = `✓ Dispositivo do driver ${uid.slice(0, 8)}… resetado com sucesso.`;
+        resultEl.style.color = '#16A34A';
+        document.getElementById('device-info').textContent = '';
+      } else {
+        resultEl.textContent = 'Erro: ' + (data.error || 'Desconhecido');
+        resultEl.style.color = '#DC2626';
+      }
+    } catch (e) {
+      resultEl.textContent = 'Erro: ' + e.message;
+      resultEl.style.color = '#DC2626';
+    }
   };
 
   // ── Submit form ────────────────────────────────────────────

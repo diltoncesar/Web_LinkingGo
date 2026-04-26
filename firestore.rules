@@ -12,8 +12,18 @@ service cloud.firestore {
 
     // ── Drivers ──────────────────────────────────────────────
     match /drivers/{uid} {
-      allow read:  if isAuth();
-      allow write: if isOwner(uid);
+      allow read:   if isAuth();
+      allow create: if isOwner(uid);
+      // Update: owner pode alterar apenas campos não-sensíveis.
+      // Campos de pagamento, empresa e dispositivo só o servidor (Admin SDK) pode escrever.
+      allow update: if isOwner(uid) &&
+        !request.resource.data.diff(resource.data).affectedKeys().hasAny([
+          'isPremium', 'subscriptionId', 'subscriptionStatus',
+          'premiumSince', 'premiumExpiresAt',
+          'activeCompany', 'companyLinkedAt', 'companyRemovedAt',
+          'deviceId', 'deviceLastSeen', 'deviceModel',
+          'registrationIp', 'accessStatus'
+        ]);
 
       // Subcoleção de fotos de entrega
       match /photos/{photoId} {

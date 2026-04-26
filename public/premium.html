@@ -343,7 +343,7 @@
 
     <!-- Payment tabs -->
     <div id="paymentSection">
-      <div class="tabs">
+      <div class="tabs" style="display:none">
         <button class="tab-btn active" id="tabCard" onclick="switchTab('card')">
           💳 Cartão
         </button>
@@ -353,7 +353,7 @@
       </div>
 
       <!-- ── Tab: Cartão de Crédito ─────────────────────────────── -->
-      <div class="tab-panel active" id="panelCard">
+      <div class="tab-panel" id="panelCard">
         <div class="field">
           <label>Nome no cartão</label>
           <input type="text" id="cardName" placeholder="NOME SOBRENOME" autocomplete="cc-name" />
@@ -387,18 +387,18 @@
       </div>
 
       <!-- ── Tab: PIX ───────────────────────────────────────────── -->
-      <div class="tab-panel" id="panelPix">
+      <div class="tab-panel active" id="panelPix">
         <p style="font-size:13px;color:var(--gray-500);margin-bottom:16px;line-height:1.6">
           Gere um QR Code PIX e pague no seu banco. Após a confirmação do pagamento,
           seu acesso Premium será liberado automaticamente por <strong>30 dias</strong>.
         </p>
         <div class="field">
-          <label>CPF (opcional)</label>
+          <label>CPF</label>
           <input type="text" id="pixCpf" placeholder="000.000.000-00" maxlength="14"
                  oninput="maskCpf(this)" inputmode="numeric" />
         </div>
         <button class="btn-pix" id="btnPix" onclick="handlePixCharge()">
-          Gerar QR Code PIX — R$29,90
+          Gerar QR Code PIX — R$0,05
         </button>
 
         <!-- QR Code result -->
@@ -583,6 +583,10 @@
     }
 
     const taxId = document.getElementById('pixCpf').value.trim();
+    if (taxId.replace(/\D/g, '').length !== 11) {
+      showMsg('pixMsg', 'error', 'Informe seu CPF para continuar.');
+      return;
+    }
 
     const btn = document.getElementById('btnPix');
     btn.disabled = true;
