@@ -10,6 +10,8 @@
 
   <!-- PagSeguro / PagBank Direct Checkout SDK -->
   <script src="https://assets.pagseguro.com.br/checkout-sdk/js/direct-checkout.min.js"></script>
+  <!-- QR code generator (client-side, sem dependência de auth do PagBank) -->
+  <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -239,7 +241,7 @@
       border-radius: 14px;
       border: 1.5px dashed var(--gray-300);
     }
-    .pix-box img { width: 180px; height: 180px; border-radius: 8px; }
+    #pixQrCanvas canvas { width: 180px !important; height: 180px !important; border-radius: 8px; display: block; }
     .pix-code-label { font-size: 12px; color: var(--gray-500); font-weight: 600; text-align: center; }
     .pix-code-wrap {
       display: flex;
@@ -398,12 +400,12 @@
                  oninput="maskCpf(this)" inputmode="numeric" />
         </div>
         <button class="btn-pix" id="btnPix" onclick="handlePixCharge()">
-          Gerar QR Code PIX — R$0,05
+          Gerar QR Code PIX — R$1,00
         </button>
 
         <!-- QR Code result -->
         <div class="pix-box" id="pixBox">
-          <img id="pixQrImage" src="" alt="QR Code PIX" />
+          <div id="pixQrCanvas"></div>
           <p class="pix-code-label">Ou copie o código Pix Copia e Cola:</p>
           <div class="pix-code-wrap">
             <div class="pix-code-text" id="pixCodeText"></div>
@@ -421,10 +423,11 @@
       <div class="success-icon">🎉</div>
       <div class="success-title">Pagamento confirmado!</div>
       <p class="success-sub">
-        Seu acesso Premium foi ativado.<br />
-        Volte ao app para continuar usando o LinkingGo.
+        Sua conta Premium está ativa.<br />
+        Voltando ao app automaticamente…
       </p>
-      <button class="btn-open-app" onclick="openApp()">Abrir LinkingGo</button>
+      <div id="successCountdown" style="font-size:42px;font-weight:800;color:#16A34A;margin:4px 0 12px;">2</div>
+      <button class="btn-open-app" onclick="openApp()">Abrir LinkingGo agora</button>
     </div>
 
     <p class="secure-note">🔒 Pagamento seguro processado pelo PagBank</p>
@@ -589,6 +592,7 @@
     }
 
     const btn = document.getElementById('btnPix');
+    const originalBtnText = btn.textContent.trim();
     btn.disabled = true;
     btn.textContent = 'Gerando QR Code...';
     showMsg('pixMsg', 'info', 'Conectando ao PagBank...');
@@ -611,27 +615,31 @@
         throw new Error(data.error || 'Falha ao gerar cobrança PIX.');
       }
 
-      // Exibe QR code
+      // Exibe QR code gerado client-side a partir do texto PIX
       const pixBox = document.getElementById('pixBox');
       pixBox.style.display = 'flex';
 
-      if (data.qrCodeImage) {
-        document.getElementById('pixQrImage').src = data.qrCodeImage;
-      } else {
-        document.getElementById('pixQrImage').style.display = 'none';
-      }
-
       if (data.qrCodeText) {
+        const canvas = document.getElementById('pixQrCanvas');
+        canvas.innerHTML = '';
+        new QRCode(canvas, {
+          text:       data.qrCodeText,
+          width:      180,
+          height:     180,
+          colorDark:  '#0F172A',
+          colorLight: '#FFFFFF',
+        });
         document.getElementById('pixCodeText').textContent = data.qrCodeText;
       }
 
       showMsg('pixMsg', 'success', 'QR Code gerado! Pague no seu banco e aguarde a confirmação.');
       btn.disabled = false;
       btn.textContent = 'Gerar novo QR Code';
+      startPaymentPolling();
     } catch (err) {
       showMsg('pixMsg', 'error', err.message || 'Erro ao gerar PIX.');
       btn.disabled = false;
-      btn.textContent = 'Gerar QR Code PIX — R$29,90';
+      btn.textContent = originalBtnText;
     }
   }
 
@@ -654,20 +662,59 @@
   }
 
   // ── Mostrar tela de sucesso ───────────────────────────────────
-  function showSuccess() {
-    document.getElementById('planHeader').style.display    = 'none';
-    document.getElementById('featureList').style.display   = 'none';
-    document.getElementById('paymentSection').style.display = 'none';
-    const s = document.getElementById('successScreen');
-    s.style.display = 'flex';
+  // ── Polling: verifica a cada 5s se o pagamento foi confirmado ────
+  let _pollingTimer = null;
+
+  function startPaymentPolling() {
+    if (!UID) return;
+    let attempts = 0;
+    const MAX = 72; // 6 min (72 × 5s)
+    _pollingTimer = setInterval(async () => {
+      if (++attempts > MAX) { clearInterval(_pollingTimer); return; }
+      try {
+        const r = await fetch(`${FUNCTIONS_BASE}/checkPixStatus`, {
+          method:  'POST',
+          headers: {'Content-Type': 'application/json'},
+          body:    JSON.stringify({uid: UID}),
+        });
+        const d = await r.json();
+        if (d.paid) {
+          clearInterval(_pollingTimer);
+          showSuccess();
+        }
+      } catch (_) { /* ignora erros de rede no polling */ }
+    }, 5000);
   }
 
-  // ── Abrir app via deep link ───────────────────────────────────
+  function showSuccess() {
+    clearInterval(_pollingTimer);
+    document.getElementById('planHeader').style.display     = 'none';
+    document.getElementById('featureList').style.display    = 'none';
+    document.getElementById('paymentSection').style.display = 'none';
+    document.getElementById('successScreen').style.display  = 'flex';
+
+    // Countdown 2s → abre o app automaticamente
+    let secs = 2;
+    const countEl = document.getElementById('successCountdown');
+    const tick = setInterval(() => {
+      secs--;
+      if (countEl) countEl.textContent = secs > 0 ? secs : '';
+      if (secs <= 0) {
+        clearInterval(tick);
+        openApp();
+      }
+    }, 1000);
+  }
+
+  // ── Abrir app via deep link (Android intent URL é mais confiável no Chrome) ─
   function openApp() {
-    window.location.href = 'linkinggo://premium-success';
+    // Intent URL garante que o Chrome Android abre o app sem popup de escolha
+    const intentUrl = 'intent://premium-success#Intent;scheme=linkinggo;package=com.linkinggo.app;end';
+    window.location.href = intentUrl;
+    // Fallback caso o scheme não esteja registrado: exibe botão de instrução
     setTimeout(() => {
-      // Fallback: se o app não abrir, mostra instrução
-      document.querySelector('.btn-open-app').textContent = 'Volte ao app manualmente';
+      const btn = document.querySelector('.btn-open-app');
+      if (btn) btn.textContent = 'Volte ao app manualmente ↩';
     }, 2500);
   }
 </script>

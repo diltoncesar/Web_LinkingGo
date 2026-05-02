@@ -63,6 +63,86 @@ function setCors(res) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// createPagbankPlan — TEMPORÁRIA: cria o plano recorrente no PagBank produção
+// Chamar UMA VEZ via GET, anotar o plan_id retornado, depois remover esta função
+// ─────────────────────────────────────────────────────────────────────────────
+exports.createPagbankPlan = onRequest(
+  {secrets: [PAGBANK_TOKEN]},
+  async (req, res) => {
+    const {default: fetch} = await import('node-fetch');
+    const token = PAGBANK_TOKEN.value();
+    const results = {};
+
+    // Teste 1: listar planos (GET recurring-billing)
+    const r1 = await fetch(`${PAGBANK_BASE}/recurring-billing/v1/plans`, {
+      headers: {Authorization: `Bearer ${token.trim()}`, Accept: 'application/json'},
+    });
+    results.listPlans = {status: r1.status, isCloudflare: (await r1.text()).includes('Cloudflare')};
+
+    // Teste 2: endpoint /orders (usado pelo PIX)
+    const r2 = await fetch(`${PAGBANK_BASE}/orders`, {
+      method: 'POST',
+      headers: {Authorization: `Bearer ${token.trim()}`, 'Content-Type': 'application/json'},
+      body: JSON.stringify({reference_id: 'test-probe'}),
+    });
+    const body2 = await r2.text();
+    results.ordersEndpoint = {status: r2.status, isCloudflare: body2.includes('Cloudflare'), preview: body2.slice(0, 200)};
+
+    // Teste 3: endpoint de assinaturas recorrentes
+    const r3 = await fetch(`${PAGBANK_BASE}/recurring-billing/v1/subscriptions`, {
+      method: 'POST',
+      headers: {Authorization: `Bearer ${token.trim()}`, 'Content-Type': 'application/json'},
+      body: JSON.stringify({reference_id: 'test-probe'}),
+    });
+    const body3 = await r3.text();
+    results.subscriptionsEndpoint = {status: r3.status, isCloudflare: body3.includes('Cloudflare'), preview: body3.slice(0, 200)};
+
+    // Teste 4: cobrança PIX real de R$1,00 — só se ?pix=1
+    if (req.query.pix === '1' && req.method === 'POST') {
+      const {cpf, email, name} = req.body || {};
+      const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+      const pixPayload = {
+        reference_id: 'producao-teste-linkinggo',
+        customer: {
+          name: name || 'Teste Producao',
+          email,
+          tax_id: (cpf || '').replace(/\D/g, ''),
+        },
+        items: [{
+          name:        'LinkingGo Premium — teste producao',
+          quantity:    1,
+          unit_amount: 100,
+        }],
+        qr_codes: [{
+          amount:          {value: 100},
+          expiration_date: expiresAt,
+        }],
+        notification_urls: ['https://pagbankwebhook-bqwrf4cd6q-uc.a.run.app'],
+      };
+
+      const r4 = await fetch(`${PAGBANK_BASE}/orders`, {
+        method: 'POST',
+        headers: {
+          Authorization:  `Bearer ${token.trim()}`,
+          'Content-Type': 'application/json',
+          Accept:         'application/json',
+        },
+        body: JSON.stringify(pixPayload),
+      });
+      const pixBody = await r4.json().catch(() => ({}));
+      results.pixTest = {
+        requestUrl:     `${PAGBANK_BASE}/orders`,
+        requestPayload: pixPayload,
+        responseStatus: r4.status,
+        responseBody:   pixBody,
+      };
+    }
+
+    res.status(200).json(results);
+  },
+);
+
+// ─────────────────────────────────────────────────────────────────────────────
 // createSubscription — cartão de crédito recorrente
 // Body: { uid, cardEncrypted, holderName, holderDocument (CPF), email }
 // ─────────────────────────────────────────────────────────────────────────────
@@ -165,12 +245,12 @@ exports.createPixCharge = onRequest(
     }
 
     // Verifica desconto 10% para driver vinculado a empresa ativa
-    let pixAmount = 5; // TODO: voltar para 2990 (R$29,90) após testes
+    let pixAmount = 100; // TODO: voltar para 2990 (R$29,90) após homologação
     const pixDriverData = pixDriverSnap.data() || {};
     if (pixDriverData.activeCompany) {
       const compSnap = await db.collection('companies').doc(pixDriverData.activeCompany).get();
       if (compSnap.exists && compSnap.data().paymentStatus !== 'BLOCKED') {
-        pixAmount = 5; // TODO: voltar para 2691 (R$26,91) após testes
+        pixAmount = 100; // TODO: voltar para 2691 (R$26,91) após homologação
       }
     }
 
@@ -178,7 +258,7 @@ exports.createPixCharge = onRequest(
       const token = PAGBANK_TOKEN.value();
       const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
 
-      const customer = {name};
+      const customer = {name, email: `${uid}@linkinggo.app`};
       if (taxId) { customer.tax_id = taxId.replace(/\D/g, ''); }
 
       const payload = {
@@ -516,6 +596,25 @@ exports.resetDriverDevice = onRequest(
 );
 
 // ─────────────────────────────────────────────────────────────────────────────
+// checkPixStatus — premium.html polling: verifica se driver virou premium
+// Body: { uid }
+// ─────────────────────────────────────────────────────────────────────────────
+exports.checkPixStatus = onRequest(async (req, res) => {
+  setCors(res);
+  if (req.method === 'OPTIONS') { res.status(204).send(''); return; }
+  if (req.method !== 'POST')    { res.status(405).send('Method Not Allowed'); return; }
+
+  const {uid} = req.body || {};
+  if (!uid) { res.status(400).json({error: 'uid obrigatório'}); return; }
+
+  const snap = await db.collection('drivers').doc(uid).get();
+  if (!snap.exists) { res.status(404).json({paid: false}); return; }
+
+  const data = snap.data() || {};
+  res.status(200).json({paid: data.isPremium === true});
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
 // pagbankWebhook — recebe notificações de cobrança/assinatura do PagBank
 // URL pública; configurar no painel PagBank → Webhooks
 // ─────────────────────────────────────────────────────────────────────────────
@@ -524,17 +623,29 @@ exports.pagbankWebhook = onRequest(async (req, res) => {
 
   const event = req.body || {};
 
-  // PagBank pode enviar o tipo em campos diferentes conforme a versão da API
-  const eventType = event.type || event.event_type || '';
+  // Log completo temporário para diagnóstico de estrutura do payload PagBank
+  console.log('[pagbankWebhook] payload completo:', JSON.stringify(event));
 
-  // reference_id é o uid do motorista que passamos ao criar o recurso
+  // PagBank pode enviar o tipo em campos diferentes conforme a versão da API
+  // Para pedidos PIX, o payload é o objeto do pedido diretamente (sem campo type)
+  let eventType = event.type || event.event_type || event.data?.type || '';
+
+  if (!eventType && Array.isArray(event.charges)) {
+    const allPaid = event.charges.every(c => c.status === 'PAID');
+    if (allPaid && event.charges.length > 0) eventType = 'ORDER_PAID';
+  }
+
+  // reference_id é o uid do motorista — PagBank aninha em diferentes locais
   const uid = event.reference_id
+    || event.data?.reference_id
     || event.subscription?.reference_id
     || event.charge?.reference_id
-    || event.order?.reference_id;
+    || event.order?.reference_id
+    || event.data?.order?.reference_id
+    || event.data?.charge?.reference_id;
 
   if (!uid) {
-    console.warn('[pagbankWebhook] sem reference_id no evento:', eventType);
+    console.warn('[pagbankWebhook] sem reference_id no evento:', eventType, '| keys:', Object.keys(event).join(','));
     res.status(200).send('OK');
     return;
   }
@@ -559,8 +670,14 @@ exports.pagbankWebhook = onRequest(async (req, res) => {
         const now = Date.now();
         const isRecurring = !!event.subscription;
 
+        // Extrai dados do pagamento do payload do PagBank
+        const charge      = (event.charges || [])[0] || {};
+        const paidAt      = charge.paid_at ? new Date(charge.paid_at).getTime() : now;
+        const paidAmount  = charge.amount?.value ?? 0;
+        const orderId     = event.id || charge.metadata?.ps_order_id || '';
+        const payMethod   = isRecurring ? 'CREDIT_CARD' : 'PIX';
+
         if (isRecurring) {
-          // Recorrente: usa a data da próxima fatura do PagBank
           const nextMs = event.subscription?.next_invoice_at
             ? new Date(event.subscription.next_invoice_at).getTime()
             : now + 32 * 24 * 60 * 60 * 1000;
@@ -569,14 +686,22 @@ exports.pagbankWebhook = onRequest(async (req, res) => {
             isPremium:          true,
             subscriptionStatus: 'active',
             premiumExpiresAt:   nextMs,
+            lastPaymentAt:      paidAt,
+            lastPaymentAmount:  paidAmount,
+            lastPaymentOrderId: orderId,
+            paymentMethod:      payMethod,
           }, {merge: true});
         } else {
-          // PIX / cobrança avulsa: 30 dias a partir de agora
+          // PIX / cobrança avulsa: 30 dias a partir da data do pagamento
           await driverRef.set({
             isPremium:          true,
             subscriptionStatus: 'active',
-            premiumSince:       now,
-            premiumExpiresAt:   now + 30 * 24 * 60 * 60 * 1000,
+            premiumSince:       paidAt,
+            premiumExpiresAt:   paidAt + 30 * 24 * 60 * 60 * 1000,
+            lastPaymentAt:      paidAt,
+            lastPaymentAmount:  paidAmount,
+            lastPaymentOrderId: orderId,
+            paymentMethod:      payMethod,
           }, {merge: true});
         }
         break;
