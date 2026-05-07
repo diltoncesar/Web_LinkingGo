@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Ajuda — LinkingGo</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#F8FAFC;color:#1E293B;min-height:100vh}
+    header{background:#2563EB;padding:20px 24px;display:flex;align-items:center;gap:14px}
+    header img{height:36px}
+    header h1{color:#fff;font-size:20px;font-weight:700}
+    .container{max-width:720px;margin:0 auto;padding:24px 16px 80px}
+    .search-box{position:relative;margin-bottom:28px}
+    .search-box input{width:100%;padding:14px 16px 14px 44px;border:1.5px solid #E2E8F0;border-radius:12px;font-size:15px;background:#fff;outline:none;transition:border .2s}
+    .search-box input:focus{border-color:#2563EB}
+    .search-icon{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:#94A3B8;font-size:18px}
+    .category{margin-bottom:12px;background:#fff;border-radius:12px;box-shadow:0 1px 4px rgba(0,0,0,.06);overflow:hidden}
+    .cat-header{display:flex;align-items:center;gap:12px;padding:16px 18px;cursor:pointer;user-select:none}
+    .cat-icon{font-size:22px;width:32px;text-align:center}
+    .cat-title{font-size:16px;font-weight:600;flex:1}
+    .cat-arrow{font-size:13px;color:#94A3B8;transition:transform .25s}
+    .category.open .cat-arrow{transform:rotate(180deg)}
+    .cat-body{display:none;border-top:1px solid #F1F5F9}
+    .category.open .cat-body{display:block}
+    .faq-item{border-bottom:1px solid #F1F5F9}
+    .faq-item:last-child{border-bottom:none}
+    .faq-q{padding:14px 18px;font-size:14px;font-weight:600;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:8px;color:#334155}
+    .faq-q span{flex:1}
+    .faq-q .arrow{font-size:11px;color:#94A3B8;transition:transform .2s;flex-shrink:0}
+    .faq-item.open .faq-q .arrow{transform:rotate(180deg)}
+    .faq-a{display:none;padding:0 18px 14px;font-size:13px;color:#475569;line-height:1.65}
+    .faq-item.open .faq-a{display:block}
+    .no-results{text-align:center;padding:40px 16px;color:#94A3B8;display:none}
+
+    /* Chat */
+    .chat-trigger{margin-top:32px;background:#EFF6FF;border:1.5px dashed #BFDBFE;border-radius:12px;padding:20px;text-align:center}
+    .chat-trigger p{font-size:14px;color:#475569;margin-bottom:14px}
+    .chat-trigger button{background:#2563EB;color:#fff;border:none;padding:12px 28px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer}
+    .chat-trigger button:hover{background:#1D4ED8}
+    .chat-panel{display:none;position:fixed;bottom:0;left:0;right:0;top:0;background:rgba(0,0,0,.45);z-index:100;align-items:flex-end}
+    .chat-panel.open{display:flex}
+    .chat-box{background:#fff;width:100%;max-width:720px;margin:0 auto;border-radius:16px 16px 0 0;display:flex;flex-direction:column;max-height:85vh}
+    .chat-header{display:flex;align-items:center;justify-content:space-between;padding:16px 18px;border-bottom:1px solid #F1F5F9}
+    .chat-header-info{display:flex;align-items:center;gap:10px}
+    .chat-avatar{width:36px;height:36px;background:#2563EB;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:17px}
+    .chat-title{font-size:15px;font-weight:600}
+    .chat-subtitle{font-size:12px;color:#64748B}
+    .close-chat{background:none;border:none;font-size:20px;cursor:pointer;color:#94A3B8;padding:4px}
+    .chat-messages{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px}
+    .msg{max-width:82%;font-size:13px;line-height:1.55;padding:10px 13px;border-radius:12px}
+    .msg.bot{background:#F1F5F9;color:#1E293B;align-self:flex-start;border-bottom-left-radius:4px}
+    .msg.user{background:#2563EB;color:#fff;align-self:flex-end;border-bottom-right-radius:4px}
+    .msg.typing{color:#94A3B8;font-style:italic}
+    .chat-input-row{display:flex;gap:8px;padding:12px 14px;border-top:1px solid #F1F5F9}
+    .chat-input-row input{flex:1;border:1.5px solid #E2E8F0;border-radius:10px;padding:10px 13px;font-size:14px;outline:none}
+    .chat-input-row input:focus{border-color:#2563EB}
+    .chat-input-row button{background:#2563EB;color:#fff;border:none;border-radius:10px;padding:10px 16px;font-size:18px;cursor:pointer;flex-shrink:0}
+    .chat-input-row button:disabled{background:#CBD5E1;cursor:not-allowed}
+  </style>
+</head>
+<body>
+
+<header>
+  <img src="/assets/logo.png" alt="LinkingGo" onerror="this.style.display='none'"/>
+  <h1>Central de Ajuda</h1>
+</header>
+
+<div class="container">
+  <div class="search-box">
+    <span class="search-icon">🔍</span>
+    <input type="text" id="search" placeholder="Buscar dúvidas..." oninput="filterFAQ()"/>
+  </div>
+
+  <div id="faq-list">
+
+    <div class="category open">
+      <div class="cat-header" onclick="toggleCat(this)">
+        <span class="cat-icon">🔐</span>
+        <span class="cat-title">Conta e Acesso</span>
+        <span class="cat-arrow">▼</span>
+      </div>
+      <div class="cat-body">
+        <div class="faq-item">
+          <div class="faq-q" onclick="toggleFAQ(this)"><span>Como criar uma conta?</span><span class="arrow">▼</span></div>
+          <div class="faq-a">Na tela de login, toque em <b>Criar Conta</b>. Preencha nome completo (nome e sobrenome), e-mail, telefone e senha de no mínimo 8 caracteres. Após cadastrar, você receberá um e-mail de verificação — clique no link antes de fazer login.</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q" onclick="toggleFAQ(this)"><span>Não recebi o e-mail de verificação</span><span class="arrow">▼</span></div>
+          <div class="faq-a">Verifique sua pasta de <b>spam/lixo eletrônico</b>. Se não encontrar, tente fazer login no app — aparecerá o botão <b>"Reenviar e-mail de verificação"</b>. Basta estar com e-mail e senha preenchidos para usar essa opção.</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q" onclick="toggleFAQ(this)"><span>Esqueci minha senha</span><span class="arrow">▼</span></div>
+          <div class="faq-a">Na tela de login, toque em <b>"Esqueceu a senha?"</b>, informe seu e-mail e enviaremos um link para redefinição.</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q" onclick="toggleFAQ(this)"><span>Posso usar a mesma conta em dois celulares?</span><span class="arrow">▼</span></div>
+          <div class="faq-a">Não. Cada conta fica vinculada ao primeiro celular utilizado. Se precisar trocar de dispositivo, entre em contato com o suporte.</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q" onclick="toggleFAQ(this)"><span>O que é "Manter logado"?</span><span class="arrow">▼</span></div>
+          <div class="faq-a">Quando ativado, o app mantém sua sessão ao fechar. Quando desativado, você precisará fazer login toda vez que abrir o app.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="category">
+      <div class="cat-header" onclick="toggleCat(this)">
+        <span class="cat-icon">📦</span>
+        <span class="cat-title">Rotas e Entregas</span>
+        <span class="cat-arrow">▼</span>
+      </div>
+      <div class="cat-body">
+        <div class="faq-item">
+          <div class="faq-q" onclick="toggleFAQ(this)"><span>Como adicionar uma parada?</span><span class="arrow">▼</span></div>
+          <div class="faq-a">Na tela principal, toque no botão <b>+</b> e preencha o endereço, nome do destinatário e observação (opcional).</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q" onclick="toggleFAQ(this)"><span>Como importar paradas por CSV?</span><span class="arrow">▼</span></div>
+          <div class="faq-a">Toque no botão de <b>importar CSV</b>, cole o conteúdo no campo de texto. Formato: uma parada por linha, com <b>endereço, destinatário, observação</b> separados por vírgula.</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q" onclick="toggleFAQ(this)"><span>Como registrar uma entrega?</span><span class="arrow">▼</span></div>
+          <div class="faq-a">Toque na parada → selecione o status (<b>Entregue, Recusado</b> etc.) → tire uma foto como comprovante. A foto é obrigatória para confirmar Entregue ou Recusado.</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q" onclick="toggleFAQ(this)"><span>Posso reordenar as paradas?</span><span class="arrow">▼</span></div>
+          <div class="faq-a">Sim. Pressione e arraste a parada para a posição desejada na lista.</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q" onclick="toggleFAQ(this)"><span>Como ver o histórico de entregas?</span><span class="arrow">▼</span></div>
+          <div class="faq-a">Abra o <b>menu lateral</b> → toque em <b>Histórico</b>. Lá estão todas as rotas anteriores com fotos e status.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="category">
+      <div class="cat-header" onclick="toggleCat(this)">
+        <span class="cat-icon">🗺️</span>
+        <span class="cat-title">Mapa e Navegação</span>
+        <span class="cat-arrow">▼</span>
+      </div>
+      <div class="cat-body">
+        <div class="faq-item">
+          <div class="faq-q" onclick="toggleFAQ(this)"><span>Como abrir o mapa?</span><span class="arrow">▼</span></div>
+          <div class="faq-a">Toque no ícone de mapa no menu lateral. O mapa exibe todas as paradas do dia e sua localização em tempo real.</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q" onclick="toggleFAQ(this)"><span>Como navegar até uma parada?</span><span class="arrow">▼</span></div>
+          <div class="faq-a">No mapa, toque no marcador da parada → toque em <b>Navegar</b>. O Google Maps abrirá com a rota traçada.</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q" onclick="toggleFAQ(this)"><span>O mapa não mostra minha localização</span><span class="arrow">▼</span></div>
+          <div class="faq-a">Verifique se o app tem permissão de localização: <b>Configurações do Android → Apps → LinkingGo → Permissões → Localização → Permitir sempre</b>.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="category">
+      <div class="cat-header" onclick="toggleCat(this)">
+        <span class="cat-icon">⭐</span>
+        <span class="cat-title">Premium</span>
+        <span class="cat-arrow">▼</span>
+      </div>
+      <div class="cat-body">
+        <div class="faq-item">
+          <div class="faq-q" onclick="toggleFAQ(this)"><span>Como assinar o Premium?</span><span class="arrow">▼</span></div>
+          <div class="faq-a">Abra o <b>menu lateral</b> → toque em <b>Assinar Premium</b>. O plano custa R$29,90/mês e pode ser pago via PIX ou cartão de crédito.</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q" onclick="toggleFAQ(this)"><span>Por quanto tempo o Premium é válido?</span><span class="arrow">▼</span></div>
+          <div class="faq-a">30 dias a partir da data do pagamento. A data de validade aparece abaixo de "⭐ Premium Ativo" no menu lateral.</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q" onclick="toggleFAQ(this)"><span>O Premium atualiza automaticamente após o pagamento?</span><span class="arrow">▼</span></div>
+          <div class="faq-a">Sim. Assim que o pagamento é confirmado, o app atualiza automaticamente sem precisar fechar ou reinstalar.</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q" onclick="toggleFAQ(this)"><span>Como cancelar o Premium?</span><span class="arrow">▼</span></div>
+          <div class="faq-a">Entre em contato pelo e-mail <b>suporte@linkinggo.com.br</b> informando seu e-mail cadastrado.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="category">
+      <div class="cat-header" onclick="toggleCat(this)">
+        <span class="cat-icon">🏢</span>
+        <span class="cat-title">Empresa</span>
+        <span class="cat-arrow">▼</span>
+      </div>
+      <div class="cat-body">
+        <div class="faq-item">
+          <div class="faq-q" onclick="toggleFAQ(this)"><span>Como vincular minha conta a uma empresa?</span><span class="arrow">▼</span></div>
+          <div class="faq-a">Menu lateral → <b>Vincular Empresa</b> → insira o código de 6 dígitos fornecido pela sua empresa.</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q" onclick="toggleFAQ(this)"><span>O que muda ao vincular a uma empresa?</span><span class="arrow">▼</span></div>
+          <div class="faq-a">O acesso Premium passa a ser gerenciado pela empresa. Enquanto o vínculo estiver ativo, você não precisa pagar o plano individualmente.</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q" onclick="toggleFAQ(this)"><span>Como desvincular da empresa?</span><span class="arrow">▼</span></div>
+          <div class="faq-a">Entre em contato pelo e-mail <b>suporte@linkinggo.com.br</b> informando seu e-mail cadastrado e o nome da empresa.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="category">
+      <div class="cat-header" onclick="toggleCat(this)">
+        <span class="cat-icon">🔧</span>
+        <span class="cat-title">Problemas Técnicos</span>
+        <span class="cat-arrow">▼</span>
+      </div>
+      <div class="cat-body">
+        <div class="faq-item">
+          <div class="faq-q" onclick="toggleFAQ(this)"><span>O app abriu uma tela vermelha</span><span class="arrow">▼</span></div>
+          <div class="faq-a">Feche o app e abra novamente. Se persistir, desinstale e reinstale o LinkingGo pela loja ou pelo link oficial.</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q" onclick="toggleFAQ(this)"><span>A foto não enviou</span><span class="arrow">▼</span></div>
+          <div class="faq-a">Verifique sua conexão com a internet e tente novamente. Certifique-se que o app tem permissão de câmera nas configurações do Android.</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q" onclick="toggleFAQ(this)"><span>"Este dispositivo já está vinculado"</span><span class="arrow">▼</span></div>
+          <div class="faq-a">Sua conta está registrada em outro celular. Entre em contato pelo e-mail <b>suporte@linkinggo.com.br</b> para liberar o acesso no novo dispositivo.</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q" onclick="toggleFAQ(this)"><span>App lento ou travando</span><span class="arrow">▼</span></div>
+          <div class="faq-a">Feche o app completamente e reabra. Se persistir, vá em <b>Configurações → Apps → LinkingGo → Armazenamento → Limpar cache</b>.</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="no-results" id="no-results">Nenhuma dúvida encontrada para "<span id="search-term"></span>".</div>
+
+  <div class="chat-trigger" id="chat-trigger">
+    <p>Não encontrou o que precisava? Fale com nosso assistente.</p>
+    <button onclick="openChat()">💬 Falar com Assistente</button>
+  </div>
+</div>
+
+<!-- Chat Panel -->
+<div class="chat-panel" id="chat-panel" onclick="closeChatOutside(event)">
+  <div class="chat-box">
+    <div class="chat-header">
+      <div class="chat-header-info">
+        <div class="chat-avatar">🤖</div>
+        <div>
+          <div class="chat-title">Assistente LinkingGo</div>
+          <div class="chat-subtitle">Responde em segundos</div>
+        </div>
+      </div>
+      <button class="close-chat" onclick="closeChat()">✕</button>
+    </div>
+    <div class="chat-messages" id="chat-messages">
+      <div class="msg bot">Olá! 👋 Sou o assistente do LinkingGo. Como posso te ajudar?</div>
+    </div>
+    <div class="chat-input-row">
+      <input type="text" id="chat-input" placeholder="Digite sua dúvida..." onkeydown="if(event.key==='Enter')sendMsg()"/>
+      <button id="send-btn" onclick="sendMsg()">➤</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const FUNCTIONS_BASE = 'https://us-central1-linkinggo.cloudfunctions.net';
+  const sessionId = Math.random().toString(36).slice(2);
+  let messages = [];
+  let sending = false;
+
+  function toggleCat(header) {
+    header.parentElement.classList.toggle('open');
+  }
+
+  function toggleFAQ(qEl) {
+    qEl.parentElement.classList.toggle('open');
+  }
+
+  function filterFAQ() {
+    const q = document.getElementById('search').value.toLowerCase().trim();
+    const items = document.querySelectorAll('.faq-item');
+    const categories = document.querySelectorAll('.category');
+    let anyVisible = false;
+
+    if (!q) {
+      items.forEach(i => i.style.display = '');
+      categories.forEach(c => { c.style.display = ''; });
+      document.getElementById('no-results').style.display = 'none';
+      document.getElementById('chat-trigger').style.display = '';
+      return;
+    }
+
+    categories.forEach(cat => {
+      let catHas = false;
+      cat.querySelectorAll('.faq-item').forEach(item => {
+        const text = item.textContent.toLowerCase();
+        if (text.includes(q)) { item.style.display = ''; catHas = true; anyVisible = true; }
+        else { item.style.display = 'none'; }
+      });
+      cat.style.display = catHas ? '' : 'none';
+      if (catHas) cat.classList.add('open');
+    });
+
+    document.getElementById('no-results').style.display = anyVisible ? 'none' : 'block';
+    document.getElementById('search-term').textContent = q;
+    document.getElementById('chat-trigger').style.display = anyVisible ? '' : 'block';
+  }
+
+  function openChat() {
+    document.getElementById('chat-panel').classList.add('open');
+    document.getElementById('chat-input').focus();
+  }
+
+  function closeChat() {
+    document.getElementById('chat-panel').classList.remove('open');
+  }
+
+  function closeChatOutside(e) {
+    if (e.target === document.getElementById('chat-panel')) closeChat();
+  }
+
+  function addMsg(role, text) {
+    const el = document.createElement('div');
+    el.className = 'msg ' + role;
+    el.textContent = text;
+    const container = document.getElementById('chat-messages');
+    container.appendChild(el);
+    container.scrollTop = container.scrollHeight;
+    return el;
+  }
+
+  async function sendMsg() {
+    if (sending) return;
+    const input = document.getElementById('chat-input');
+    const text = input.value.trim();
+    if (!text) return;
+
+    input.value = '';
+    addMsg('user', text);
+    messages.push({role: 'user', content: text});
+
+    sending = true;
+    document.getElementById('send-btn').disabled = true;
+
+    const typing = addMsg('bot typing', 'Digitando...');
+
+    try {
+      const res = await fetch(`${FUNCTIONS_BASE}/chatSupport`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({messages, sessionId}),
+      });
+      const data = await res.json();
+      typing.remove();
+      const reply = data.reply || data.error || 'Erro ao obter resposta.';
+      addMsg('bot', reply);
+      messages.push({role: 'assistant', content: reply});
+    } catch {
+      typing.remove();
+      addMsg('bot', 'Sem conexão. Verifique sua internet e tente novamente.');
+    }
+
+    sending = false;
+    document.getElementById('send-btn').disabled = false;
+    input.focus();
+  }
+</script>
+</body>
+</html>

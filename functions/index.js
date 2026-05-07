@@ -27,6 +27,7 @@ const db = getFirestore();
 const PAGBANK_TOKEN   = defineSecret('PAGBANK_TOKEN');
 const PAGBANK_PLAN_ID = defineSecret('PAGBANK_PLAN_ID');
 const ADMIN_SECRET    = defineSecret('ADMIN_SECRET');
+const ANTHROPIC_KEY   = defineSecret('ANTHROPIC_KEY');
 
 // ── Ambiente PagBank ───────────────────────────────────────────────────────
 // Para ir para produção: altere PAGBANK_ENV=production em functions/.env e faça redeploy
@@ -245,7 +246,7 @@ exports.createPixCharge = onRequest(
     }
 
     // Verifica desconto 10% para driver vinculado a empresa ativa
-    let pixAmount = 100; // TODO: voltar para 2990 (R$29,90) após homologação
+    let pixAmount = 2990; // R$29,90
     const pixDriverData = pixDriverSnap.data() || {};
     if (pixDriverData.activeCompany) {
       const compSnap = await db.collection('companies').doc(pixDriverData.activeCompany).get();
@@ -384,7 +385,7 @@ exports.linkDriverToCompany = onRequest(async (req, res) => {
 //
 // Regras:
 //   1. Rotas com mais de 30 dias → deletar (todos os usuários)
-//   2. Rotas de drivers cujo trial expirou no dia 12 sem assinar → deletar
+//   2. Rotas de drivers cujo trial expirou no dia 22 sem assinar → deletar
 //
 // Roda diariamente às 03:00 (horário de Brasília)
 // Requer Cloud Scheduler API ativada no projeto GCP (plano Blaze)
@@ -394,7 +395,7 @@ exports.dailyCleanup = onSchedule(
   async () => {
     const now          = Date.now();
     const THIRTY_DAYS  = 30 * 24 * 60 * 60 * 1000;
-    const TWELVE_DAYS  = 12 * 24 * 60 * 60 * 1000;
+    const TWENTY_TWO_DAYS = 22 * 24 * 60 * 60 * 1000;
     let totalDeleted   = 0;
 
     // Helper: deleta um array de DocumentRefs em batches de 500
@@ -418,7 +419,7 @@ exports.dailyCleanup = onSchedule(
 
     // ── Regra 2: trial expirado no dia 12 sem Premium nem empresa ───────────
     const trialExpiredSnap = await db.collection('drivers')
-      .where('createdAt', '<', now - TWELVE_DAYS)
+      .where('createdAt', '<', now - TWENTY_TWO_DAYS)
       .get();
 
     // Filtra em código: sem Premium e sem empresa vinculada
@@ -733,3 +734,106 @@ exports.pagbankWebhook = onRequest(async (req, res) => {
     res.status(500).send('Error');
   }
 });
+
+// ── chatSupport — IA de atendimento via Claude Haiku ──────────────────────────
+const CHAT_SYSTEM_PROMPT = `Você é o assistente de suporte do LinkingGo, um app Android para motoristas de entrega no Brasil.
+Responda sempre em português brasileiro, de forma clara, objetiva e amigável.
+Nunca invente funcionalidades que não existam. Se não souber, oriente o usuário a contatar o suporte pelo e-mail suporte@linkinggo.com.br.
+
+CONHECIMENTO DO APP:
+
+CONTA E ACESSO:
+- Cadastro: nome completo (nome + sobrenome), e-mail real, telefone no formato (11) 99999-9999, senha mínima de 8 caracteres.
+- Após cadastro, é enviado um e-mail de verificação. O usuário deve clicar no link antes de fazer login.
+- Login disponível por e-mail/senha ou conta Google.
+- "Manter logado": quando ativado, o app mantém a sessão ao fechar. Quando desativado, exige login a cada abertura.
+- Esqueceu a senha: na tela de login, clicar em "Esqueceu a senha?" e informar o e-mail.
+- Reenviar verificação: na tela de login, tentar entrar com e-mail não verificado → aparece link "Reenviar e-mail de verificação".
+- 1 dispositivo por conta: a conta fica vinculada ao primeiro celular utilizado.
+
+ROTAS E ENTREGAS:
+- A tela principal mostra as paradas da rota do dia.
+- Adicionar parada: botão "+" → informar endereço, destinatário e observação.
+- Importar paradas: botão CSV → colar o conteúdo do CSV no campo de texto. Formato: endereço,destinatário,observação (uma por linha).
+- Cada parada tem status: Pendente, Entregue, Recusado, Cancelado.
+- Alterar status: tocar na parada → selecionar novo status → confirmar com foto (obrigatório para Entregue e Recusado).
+- Arrastar paradas para reordenar a rota.
+- Limpar paradas: menu lateral → "Limpar Paradas" (remove todas as paradas do dia).
+- Histórico: menu lateral → "Histórico" → lista de rotas anteriores com fotos.
+
+MAPA:
+- Menu lateral → ícone de mapa → abre mapa com marcadores de todas as paradas.
+- Tocar em um marcador exibe o endereço e botão de navegação.
+- Botão de navegação abre o Google Maps com rota até a parada.
+- O mapa mostra a posição atual do motorista em tempo real.
+
+PREMIUM:
+- Plano Premium: R$29,90/mês, renovação automática a cada 30 dias.
+- Pagamento via PIX (QR Code gerado na hora) ou cartão de crédito.
+- Para assinar: menu lateral → "Assinar Premium" → tela de pagamento.
+- Após pagamento confirmado, o app atualiza automaticamente (sem precisar fechar).
+- Conta Premium: menu lateral mostra "⭐ Premium Ativo" com a data de validade.
+- Cancelamento: entrar em contato com suporte@linkinggo.com.br.
+
+EMPRESA:
+- Motoristas podem ser vinculados a uma empresa gestora.
+- Para vincular: menu lateral → "Vincular Empresa" → inserir o código de 6 dígitos fornecido pela empresa.
+- Após vinculação, o acesso Premium é gerenciado pela empresa.
+- Para desvincular: entrar em contato com suporte@linkinggo.com.br.
+
+PROBLEMAS COMUNS:
+- Tela vermelha ao abrir: o app perdeu conexão com o servidor de desenvolvimento. Reinstale o app.
+- E-mail de verificação não chegou: verificar pasta de spam. Usar "Reenviar e-mail de verificação" na tela de login.
+- "Este dispositivo já está vinculado": a conta está registrada em outro celular. Contatar suporte para liberar.
+- App lento ou travando: fechar e reabrir o app. Se persistir, limpar o cache do app nas configurações do Android.
+- Foto não enviou: verificar conexão com a internet e tentar novamente.`;
+
+const CHAT_RATE_LIMIT = new Map(); // sessionId → {count, ts}
+
+exports.chatSupport = onRequest(
+  {secrets: [ANTHROPIC_KEY], cors: true, timeoutSeconds: 30},
+  async (req, res) => {
+    if (req.method !== 'POST') { return res.status(405).send('Method Not Allowed'); }
+
+    try {
+      const {messages, sessionId} = req.body || {};
+      if (!Array.isArray(messages) || messages.length === 0) {
+        return res.status(400).json({error: 'messages obrigatório.'});
+      }
+
+      // Rate limit: máx 20 mensagens por sessão por hora
+      if (sessionId) {
+        const now = Date.now();
+        const entry = CHAT_RATE_LIMIT.get(sessionId) || {count: 0, ts: now};
+        if (now - entry.ts > 3600000) { entry.count = 0; entry.ts = now; }
+        entry.count++;
+        CHAT_RATE_LIMIT.set(sessionId, entry);
+        if (entry.count > 20) {
+          return res.status(429).json({error: 'Limite de mensagens atingido. Tente novamente em 1 hora.'});
+        }
+      }
+
+      // Manter apenas as últimas 10 mensagens para economizar tokens
+      const history = messages.slice(-10).map(m => ({
+        role: m.role === 'user' ? 'user' : 'assistant',
+        content: String(m.content).slice(0, 1000),
+      }));
+
+      const Anthropic = require('@anthropic-ai/sdk');
+      const client = new Anthropic.default({apiKey: ANTHROPIC_KEY.value()});
+
+      const response = await client.messages.create({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 512,
+        system: CHAT_SYSTEM_PROMPT,
+        messages: history,
+      });
+
+      const reply = response.content[0]?.text || 'Não consegui processar sua mensagem. Tente novamente.';
+      res.json({reply});
+    } catch (err) {
+      console.error('[chatSupport]', err.message);
+      res.status(500).json({error: 'Erro interno. Tente novamente.'});
+    }
+  }
+);
