@@ -1,0 +1,16 @@
+User-agent: *
+Allow: /
+
+# Bloquear páginas internas (não devem aparecer no Google)
+Disallow: /dashboard
+Disallow: /dashboard.html
+Disallow: /admin
+Disallow: /admin.html
+Disallow: /gestor
+Disallow: /gestor.html
+Disallow: /premium
+Disallow: /premium.html
+Disallow: /email-action.html
+Disallow: /admin-costs.html
+
+Sitemap: https://linkinggo.com.br/sitemap.xml
