@@ -251,7 +251,7 @@ exports.createPixCharge = onRequest(
     if (pixDriverData.activeCompany) {
       const compSnap = await db.collection('companies').doc(pixDriverData.activeCompany).get();
       if (compSnap.exists && compSnap.data().paymentStatus !== 'BLOCKED') {
-        pixAmount = 100; // TODO: voltar para 2691 (R$26,91) após homologação
+        pixAmount = 2691; // R$26,91 — desconto 10% para motorista vinculado a empresa
       }
     }
 
