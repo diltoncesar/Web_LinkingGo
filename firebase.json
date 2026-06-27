@@ -1,6 +1,7 @@
 {
   "firestore": {
-    "rules": "firestore.rules"
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
   },
   "hosting": {
     "public": "public",
@@ -29,7 +30,8 @@
       { "source": "/gestor", "destination": "/gestor.html" },
       { "source": "/admin", "destination": "/admin.html" },
       { "source": "/privacidade", "destination": "/privacidade.html" },
-      { "source": "/termos", "destination": "/termos.html" }
+      { "source": "/termos", "destination": "/termos.html" },
+      { "source": "/delete-account", "destination": "/delete-account.html" }
     ]
   },
   "functions": [
