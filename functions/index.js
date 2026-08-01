@@ -493,6 +493,30 @@ exports.dailyCleanup = onSchedule(
       await batch.commit();
       console.log(`[dailyCleanup] ${overdueDriversSnap.size} driver(s) premium vencido → overdue`);
     }
+
+    // ── Regra 6: Qualificação de indicações (30 dias de assinatura ativa) ──────
+    const thirtyDaysAgo = now - 30 * 24 * 60 * 60 * 1000;
+    const pendingReferralsSnap = await db.collection('referrals')
+      .where('status', '==', 'pending')
+      .where('subscribedAt', '<=', thirtyDaysAgo)
+      .get();
+
+    let qualified = 0, voided = 0;
+    for (const doc of pendingReferralsSnap.docs) {
+      const r = doc.data();
+      const referredSnap = await db.collection('drivers').doc(r.referredUid).get();
+      const referredData = referredSnap.data() || {};
+      if (referredData.isPremium === true) {
+        await doc.ref.update({status: 'qualified', qualifiedAt: now});
+        qualified++;
+      } else {
+        await doc.ref.update({status: 'void'});
+        voided++;
+      }
+    }
+    if (qualified > 0 || voided > 0) {
+      console.log(`[dailyCleanup] referrals: ${qualified} qualificados, ${voided} anulados`);
+    }
   }
 );
 
@@ -525,7 +549,25 @@ exports.registerDevice = onRequest(async (req, res) => {
       return;
     }
 
+    const OWNER_EMAILS = [
+      'diltoncr@gmail.com',
+      'dcribeiro.jr@gmail.com',
+      'votingup1@gmail.com',
+      'linkinggoapp@gmail.com',
+    ];
+
     const driverRef = db.collection('drivers').doc(uid);
+
+    // Contas do dono nunca bloqueadas por device — atualiza e libera sempre
+    if (OWNER_EMAILS.includes(decoded.email)) {
+      await driverRef.set({
+        deviceId,
+        deviceModel: deviceModel || null,
+        deviceLastSeen: Date.now(),
+      }, {merge: true});
+      res.status(200).json({success: true});
+      return;
+    }
 
     const result = await db.runTransaction(async tx => {
       const snap = await tx.get(driverRef);
@@ -615,6 +657,34 @@ exports.checkPixStatus = onRequest(async (req, res) => {
   res.status(200).json({paid: data.isPremium === true});
 });
 
+// ── createReferralIfNeeded — cria doc de indicação se ainda não existir ──────
+async function createReferralIfNeeded(db, referredUid, driverRef) {
+  try {
+    const snap = await driverRef.get();
+    const d = snap.data() || {};
+    if (!d.referredBy || d.referralCreated) {return;}
+    const referrerSnap = await db.collection('drivers').doc(d.referredBy).get();
+    const r = referrerSnap.data() || {};
+    await db.collection('referrals').add({
+      referrerUid:   d.referredBy,
+      referrerName:  r.name  || '',
+      referrerEmail: r.email || '',
+      referredUid,
+      referredEmail: d.email || '',
+      referredName:  d.name  || '',
+      status:        'pending',
+      subscribedAt:  Date.now(),
+      qualifiedAt:   null,
+      paidAt:        null,
+      amount:        7,
+    });
+    await driverRef.set({referralCreated: true}, {merge: true});
+    console.log(`[referral] criado para referredUid=${referredUid} referrerUid=${d.referredBy}`);
+  } catch (err) {
+    console.error('[createReferralIfNeeded]', err.message);
+  }
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // pagbankWebhook — recebe notificações de cobrança/assinatura do PagBank
 // URL pública; configurar no painel PagBank → Webhooks
@@ -663,6 +733,7 @@ exports.pagbankWebhook = onRequest(async (req, res) => {
           subscriptionStatus: 'active',
           premiumSince:       Date.now(),
         }, {merge: true});
+        await createReferralIfNeeded(db, uid, driverRef);
         break;
 
       // Cobrança bem-sucedida (cartão recorrente ou PIX)
@@ -705,6 +776,7 @@ exports.pagbankWebhook = onRequest(async (req, res) => {
             paymentMethod:      payMethod,
           }, {merge: true});
         }
+        await createReferralIfNeeded(db, uid, driverRef);
         break;
       }
 

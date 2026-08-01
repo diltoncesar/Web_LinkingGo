@@ -29,6 +29,7 @@
       { "source": "/dashboard", "destination": "/dashboard.html" },
       { "source": "/gestor", "destination": "/gestor.html" },
       { "source": "/admin", "destination": "/admin.html" },
+      { "source": "/referrals", "destination": "/referrals.html" },
       { "source": "/privacidade", "destination": "/privacidade.html" },
       { "source": "/termos", "destination": "/termos.html" },
       { "source": "/delete-account", "destination": "/delete-account.html" }

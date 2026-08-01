@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LinkingGo — Indicações</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --blue:       #2563EB;
+      --blue-dark:  #1D4ED8;
+      --blue-light: #EFF6FF;
+      --gray-900:   #0F172A;
+      --gray-800:   #1E293B;
+      --gray-700:   #334155;
+      --gray-600:   #475569;
+      --gray-500:   #64748B;
+      --gray-300:   #CBD5E1;
+      --gray-200:   #E2E8F0;
+      --gray-100:   #F1F5F9;
+      --white:      #FFFFFF;
+      --green:      #16A34A;
+      --green-light:#DCFCE7;
+      --red:        #EF4444;
+      --yellow:     #D97706;
+      --yellow-light:#FEF3C7;
+    }
+    html { font-size: 16px; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--gray-100);
+      color: var(--gray-800);
+      min-height: 100vh;
+    }
+
+    /* ── Password Gate ── */
+    #gate {
+      position: fixed;
+      inset: 0;
+      background: linear-gradient(135deg, #0F172A 0%, #1E3A5F 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+    }
+    .gate-card {
+      background: var(--white);
+      border-radius: 20px;
+      padding: 48px 40px;
+      width: 100%;
+      max-width: 380px;
+      text-align: center;
+      box-shadow: 0 32px 80px rgba(0,0,0,.4);
+    }
+    .gate-card h2 { font-size: 1.25rem; font-weight: 700; color: var(--gray-900); margin-bottom: 6px; }
+    .gate-card p  { font-size: .875rem; color: var(--gray-500); margin-bottom: 24px; }
+    .gate-card input {
+      width: 100%;
+      padding: 12px 16px;
+      border: 1.5px solid var(--gray-300);
+      border-radius: 10px;
+      font-size: .9375rem;
+      font-family: 'Inter', sans-serif;
+      color: var(--gray-900);
+      background: var(--gray-100);
+      outline: none;
+      margin-bottom: 14px;
+    }
+    .gate-card input:focus { border-color: var(--blue); background: var(--white); }
+    .gate-card button {
+      width: 100%;
+      padding: 13px;
+      background: var(--blue);
+      color: var(--white);
+      border: none;
+      border-radius: 10px;
+      font-size: 1rem;
+      font-weight: 700;
+      font-family: 'Inter', sans-serif;
+      cursor: pointer;
+    }
+    .gate-card button:hover { background: var(--blue-dark); }
+    .gate-error { color: var(--red); font-size: .825rem; margin-top: 10px; display: none; }
+
+    /* ── App Shell ── */
+    #app { display: none; }
+
+    /* ── Header ── */
+    header {
+      background: var(--gray-900);
+      color: var(--white);
+      padding: 0 32px;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .brand { display: flex; align-items: center; gap: 10px; }
+    .brand-name { font-size: 1.125rem; font-weight: 800; color: var(--white); }
+    .brand-tag { font-size: .7rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: rgba(255,255,255,.4); }
+    header nav a { color: rgba(255,255,255,.6); font-size: .875rem; font-weight: 500; text-decoration: none; margin-left: 20px; transition: color .2s; }
+    header nav a:hover { color: var(--white); }
+
+    /* ── Layout ── */
+    .layout { max-width: 1100px; margin: 0 auto; padding: 32px 24px; }
+
+    /* ── Page Title ── */
+    .page-title { font-size: 1.5rem; font-weight: 800; color: var(--gray-900); margin-bottom: 4px; }
+    .page-sub   { font-size: .9rem; color: var(--gray-500); margin-bottom: 28px; }
+
+    /* ── Summary Cards ── */
+    .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 32px; }
+    .card {
+      background: var(--white);
+      border-radius: 14px;
+      padding: 20px 22px;
+      box-shadow: 0 1px 4px rgba(0,0,0,.07);
+    }
+    .card-label { font-size: .78rem; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--gray-500); margin-bottom: 8px; }
+    .card-value { font-size: 2rem; font-weight: 800; color: var(--gray-900); }
+    .card-value.green { color: var(--green); }
+    .card-value.blue  { color: var(--blue); }
+
+    /* ── Section Heading ── */
+    .section-title {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--gray-800);
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .section-sep { margin-bottom: 32px; }
+
+    /* ── Filter bar ── */
+    .filter-bar { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+    .filter-btn {
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: .825rem;
+      font-weight: 600;
+      border: 1.5px solid var(--gray-300);
+      background: var(--white);
+      color: var(--gray-600);
+      cursor: pointer;
+      transition: all .15s;
+    }
+    .filter-btn.active { background: var(--blue); border-color: var(--blue); color: var(--white); }
+
+    /* ── Table ── */
+    .table-wrap { background: var(--white); border-radius: 14px; box-shadow: 0 1px 4px rgba(0,0,0,.07); overflow: hidden; }
+    table { width: 100%; border-collapse: collapse; font-size: .875rem; }
+    th {
+      background: var(--gray-100);
+      padding: 12px 16px;
+      text-align: left;
+      font-weight: 700;
+      font-size: .75rem;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      color: var(--gray-500);
+      border-bottom: 1px solid var(--gray-200);
+    }
+    td { padding: 13px 16px; border-bottom: 1px solid var(--gray-100); vertical-align: middle; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: var(--gray-100); }
+
+    /* ── Status pill ── */
+    .pill {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: .75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+    }
+    .pill-pending   { background: var(--yellow-light); color: var(--yellow); }
+    .pill-qualified { background: var(--green-light);  color: var(--green); }
+    .pill-paid      { background: #DBEAFE; color: var(--blue-dark); }
+    .pill-void      { background: var(--gray-200); color: var(--gray-500); }
+
+    /* ── Action button ── */
+    .btn-pay {
+      padding: 6px 14px;
+      background: var(--green);
+      color: var(--white);
+      border: none;
+      border-radius: 8px;
+      font-size: .8rem;
+      font-weight: 700;
+      font-family: 'Inter', sans-serif;
+      cursor: pointer;
+      transition: opacity .15s;
+    }
+    .btn-pay:hover { opacity: .85; }
+    .btn-pay:disabled { opacity: .45; cursor: default; }
+
+    /* ── Promoters table ── */
+    .promoter-row td:first-child { font-weight: 600; }
+
+    /* ── Empty state ── */
+    .empty { text-align: center; padding: 48px 24px; color: var(--gray-500); font-size: .9rem; }
+
+    /* ── Loading ── */
+    .loading { text-align: center; padding: 32px; color: var(--gray-400); font-size: .9rem; }
+  </style>
+</head>
+<body>
+
+<!-- Gate -->
+<div id="gate">
+  <div class="gate-card">
+    <h2>Área Administrativa</h2>
+    <p>LinkingGo — Controle de Indicações</p>
+    <input type="password" id="gate-pw" placeholder="Senha de acesso" />
+    <button onclick="unlock()">Entrar</button>
+    <p class="gate-error" id="gate-err">Senha incorreta.</p>
+  </div>
+</div>
+
+<!-- App -->
+<div id="app">
+  <header>
+    <div class="brand">
+      <span class="brand-name">LinkingGo</span>
+      <span class="brand-tag">Admin</span>
+    </div>
+    <nav>
+      <a href="admin.html">Empresas</a>
+      <a href="referrals.html">Indicações</a>
+    </nav>
+  </header>
+
+  <div class="layout">
+    <h1 class="page-title">Programa de Indicações</h1>
+    <p class="page-sub">R$7,00 por motorista indicado que mantiver assinatura por 30 dias.</p>
+
+    <!-- Summary cards -->
+    <div class="cards">
+      <div class="card">
+        <div class="card-label">Pendentes</div>
+        <div class="card-value" id="cnt-pending">—</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Qualificados</div>
+        <div class="card-value green" id="cnt-qualified">—</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Pagos</div>
+        <div class="card-value blue" id="cnt-paid">—</div>
+      </div>
+      <div class="card">
+        <div class="card-label">A Pagar (R$)</div>
+        <div class="card-value green" id="total-topay">—</div>
+      </div>
+    </div>
+
+    <!-- Promoters summary -->
+    <div class="section-sep">
+      <p class="section-title">Por Promotor</p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Promotor</th>
+              <th>E-mail</th>
+              <th>Indicados</th>
+              <th>Qualificados</th>
+              <th>A Pagar</th>
+            </tr>
+          </thead>
+          <tbody id="promoters-body">
+            <tr><td colspan="5" class="loading">Carregando...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- All referrals detail -->
+    <p class="section-title">Detalhamento</p>
+    <div class="filter-bar">
+      <button class="filter-btn active" data-status="all"    onclick="setFilter('all')">Todos</button>
+      <button class="filter-btn"        data-status="pending"    onclick="setFilter('pending')">Pendentes</button>
+      <button class="filter-btn"        data-status="qualified"  onclick="setFilter('qualified')">Qualificados</button>
+      <button class="filter-btn"        data-status="paid"       onclick="setFilter('paid')">Pagos</button>
+      <button class="filter-btn"        data-status="void"       onclick="setFilter('void')">Anulados</button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Promotor</th>
+            <th>Indicado</th>
+            <th>Assinou em</th>
+            <th>Status</th>
+            <th>Valor</th>
+            <th>Ação</th>
+          </tr>
+        </thead>
+        <tbody id="referrals-body">
+          <tr><td colspan="6" class="loading">Carregando...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+  import { initializeApp }         from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
+  import { getFirestore, collection, onSnapshot, doc, updateDoc, Timestamp }
+    from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
+
+  const firebaseConfig = {
+    apiKey:            'AIzaSyDnStmxzdXdzIwwqzhiB1tPHOdACOd7MeE',
+    authDomain:        'linkinggo.firebaseapp.com',
+    projectId:         'linkinggo',
+    storageBucket:     'linkinggo.firebasestorage.app',
+    messagingSenderId: '132678928883',
+  };
+
+  const ADMIN_SECRET  = 'lg_admin_secret_2026';
+  const SESSION_KEY   = 'lg_admin_unlocked';
+  let adminUnlocked   = sessionStorage.getItem(SESSION_KEY) === '1';
+
+  let allReferrals = [];
+  let currentFilter = 'all';
+
+  // ── Gate ────────────────────────────────────────────────────────────────────
+  window.unlock = () => {
+    const pw = document.getElementById('gate-pw').value.trim();
+    const err = document.getElementById('gate-err');
+    if (pw === ADMIN_SECRET) {
+      sessionStorage.setItem(SESSION_KEY, '1');
+      document.getElementById('gate').style.display = 'none';
+      document.getElementById('app').style.display  = 'block';
+      init();
+    } else {
+      err.style.display = 'block';
+    }
+  };
+
+  document.getElementById('gate-pw').addEventListener('keydown', e => {
+    if (e.key === 'Enter') window.unlock();
+  });
+
+  if (adminUnlocked) {
+    document.getElementById('gate').style.display = 'none';
+    document.getElementById('app').style.display  = 'block';
+  }
+
+  // ── Filter ───────────────────────────────────────────────────────────────────
+  window.setFilter = (status) => {
+    currentFilter = status;
+    document.querySelectorAll('.filter-btn').forEach(b => {
+      b.classList.toggle('active', b.dataset.status === status);
+    });
+    renderReferrals();
+  };
+
+  // ── Date helpers ─────────────────────────────────────────────────────────────
+  function fmtDate(ms) {
+    if (!ms) return '—';
+    return new Date(ms).toLocaleDateString('pt-BR', {day: '2-digit', month: '2-digit', year: '2-digit'});
+  }
+
+  // ── Status labels ─────────────────────────────────────────────────────────────
+  const STATUS_LABEL = {pending: 'Pendente', qualified: 'Qualificado', paid: 'Pago', void: 'Anulado'};
+  const STATUS_CLASS = {pending: 'pill-pending', qualified: 'pill-qualified', paid: 'pill-paid', void: 'pill-void'};
+
+  // ── Render promoters table ───────────────────────────────────────────────────
+  function renderPromoters() {
+    const map = new Map();
+    for (const r of allReferrals) {
+      if (!map.has(r.referrerUid)) {
+        map.set(r.referrerUid, {
+          name:       r.referrerName  || r.referrerUid,
+          email:      r.referrerEmail || '—',
+          total:      0,
+          qualified:  0,
+          toPay:      0,
+        });
+      }
+      const p = map.get(r.referrerUid);
+      p.total++;
+      if (r.status === 'qualified') { p.qualified++; p.toPay += (r.amount || 7); }
+    }
+
+    const tbody = document.getElementById('promoters-body');
+    if (map.size === 0) {
+      tbody.innerHTML = '<tr><td colspan="5" class="empty">Nenhuma indicação ainda.</td></tr>';
+      return;
+    }
+
+    const rows = [...map.values()].sort((a, b) => b.qualified - a.qualified);
+    tbody.innerHTML = rows.map(p => `
+      <tr class="promoter-row">
+        <td>${esc(p.name)}</td>
+        <td>${esc(p.email)}</td>
+        <td>${p.total}</td>
+        <td>${p.qualified}</td>
+        <td>${p.toPay > 0 ? `<strong>R$ ${p.toPay.toFixed(2)}</strong>` : '—'}</td>
+      </tr>
+    `).join('');
+  }
+
+  // ── Render referrals table ───────────────────────────────────────────────────
+  function renderReferrals() {
+    const filtered = currentFilter === 'all'
+      ? allReferrals
+      : allReferrals.filter(r => r.status === currentFilter);
+
+    const tbody = document.getElementById('referrals-body');
+    if (filtered.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="6" class="empty">Sem registros nesta categoria.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = filtered
+      .sort((a, b) => (b.subscribedAt || 0) - (a.subscribedAt || 0))
+      .map(r => `
+        <tr>
+          <td>${esc(r.referrerName || r.referrerUid)}</td>
+          <td>
+            <div style="font-weight:600">${esc(r.referredName || r.referredUid)}</div>
+            <div style="font-size:.78rem;color:var(--gray-500)">${esc(r.referredEmail || '')}</div>
+          </td>
+          <td>${fmtDate(r.subscribedAt)}</td>
+          <td><span class="pill ${STATUS_CLASS[r.status] || 'pill-void'}">${STATUS_LABEL[r.status] || r.status}</span></td>
+          <td>R$ ${(r.amount || 7).toFixed(2)}</td>
+          <td>${r.status === 'qualified'
+            ? `<button class="btn-pay" onclick="markPaid('${r._id}', this)">Marcar Pago</button>`
+            : '—'
+          }</td>
+        </tr>
+      `).join('');
+  }
+
+  // ── Update summary cards ─────────────────────────────────────────────────────
+  function updateCards() {
+    const pending   = allReferrals.filter(r => r.status === 'pending').length;
+    const qualified = allReferrals.filter(r => r.status === 'qualified').length;
+    const paid      = allReferrals.filter(r => r.status === 'paid').length;
+    const toPay     = allReferrals
+      .filter(r => r.status === 'qualified')
+      .reduce((s, r) => s + (r.amount || 7), 0);
+
+    document.getElementById('cnt-pending').textContent   = pending;
+    document.getElementById('cnt-qualified').textContent = qualified;
+    document.getElementById('cnt-paid').textContent      = paid;
+    document.getElementById('total-topay').textContent   = `R$ ${toPay.toFixed(2)}`;
+  }
+
+  // ── Mark as paid ─────────────────────────────────────────────────────────────
+  window.markPaid = async (id, btn) => {
+    if (!confirm('Confirmar pagamento desta indicação?')) return;
+    btn.disabled = true;
+    btn.textContent = '...';
+    try {
+      const db = window._db;
+      await updateDoc(doc(db, 'referrals', id), {
+        status: 'paid',
+        paidAt: Date.now(),
+      });
+    } catch (e) {
+      alert('Erro ao atualizar: ' + e.message);
+      btn.disabled = false;
+      btn.textContent = 'Marcar Pago';
+    }
+  };
+
+  // ── HTML escape ──────────────────────────────────────────────────────────────
+  function esc(str) {
+    return String(str || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  // ── Init ─────────────────────────────────────────────────────────────────────
+  function init() {
+    const app = initializeApp(firebaseConfig);
+    const db  = getFirestore(app);
+    window._db = db;
+
+    onSnapshot(collection(db, 'referrals'), snap => {
+      allReferrals = snap.docs.map(d => ({_id: d.id, ...d.data()}));
+      updateCards();
+      renderPromoters();
+      renderReferrals();
+    }, err => console.error('[referrals]', err));
+  }
+
+  if (adminUnlocked) init();
+</script>
+</body>
+</html>
