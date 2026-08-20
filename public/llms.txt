@@ -1,0 +1,31 @@
+# LinkingGo
+
+> App Android para entregadores Shopee: importa a planilha de rotas, otimiza o trajeto automaticamente e organiza os pacotes no veículo por lote. Assinatura R$29,90/mês.
+
+LinkingGo é um app de logística de última milha voltado a motoristas autônomos que fazem entregas para a Shopee (SPX) no Brasil. Não é uma plataforma de gestão empresarial de frotas — é uma ferramenta pessoal do entregador, disponível apenas para Android (pacote `com.linkinggo.app`).
+
+## Funcionalidades principais
+- Importação de planilha Shopee (XLSX): lê as colunas Sequence, Stop, SPX TN e endereço, agrupa pacotes por parada física, geocodifica e monta a rota otimizada automaticamente.
+- Organização de pacotes por lote: leitura de código de barras pela câmera do celular, com agrupamento por quantidade (lotes numéricos) ou por zona física do veículo (5 regiões no carro, 4 baús na van, camadas de empilhamento na moto).
+- Navegação integrada com Google Maps a partir de cada parada.
+- Adição de paradas manuais, com opção de ditar o endereço por voz.
+- Opção de encerrar a rota do dia próxima à residência cadastrada do motorista.
+- Calculadora de lucro por rota.
+- Vínculo a empresas: motoristas podem ser associados a uma empresa que gerencia o acesso Premium de forma centralizada.
+
+## Preço
+Plano individual: R$29,90/mês, pago via PIX ou cartão de crédito, com renovação e liberação automáticas após a confirmação do pagamento.
+
+## Páginas
+- [Site principal](https://linkinggo.com.br/): apresentação do produto, funcionalidades, preços e download.
+- [Central de Ajuda](https://linkinggo.com.br/ajuda.html): perguntas frequentes sobre login, importação de rotas, organização de pacotes, Premium, empresas e problemas técnicos.
+- [Política de Privacidade](https://linkinggo.com.br/privacidade.html)
+- [Termos de Uso](https://linkinggo.com.br/termos.html)
+- [Baixar na Play Store](https://play.google.com/store/apps/details?id=com.linkinggo.app)
+
+## Contato
+- WhatsApp: +55 11 92578-7691
+- E-mail: suporte@linkinggo.com.br
+
+## Optional
+- Páginas como /dashboard, /admin e /gestor são painéis internos de uso restrito e não representam o produto voltado ao público.
