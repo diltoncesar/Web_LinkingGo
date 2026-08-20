@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Excluir Conta — Linking Go</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #0F172A;
+      color: #E2E8F0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    .card {
+      background: #1E293B;
+      border-radius: 16px;
+      padding: 40px 32px;
+      max-width: 480px;
+      width: 100%;
+      text-align: center;
+    }
+    .icon { font-size: 48px; margin-bottom: 16px; }
+    h1 { font-size: 22px; font-weight: 700; margin-bottom: 12px; color: #F1F5F9; }
+    p { font-size: 15px; line-height: 1.6; color: #94A3B8; margin-bottom: 16px; }
+    .info-box {
+      background: #0F172A;
+      border-radius: 10px;
+      padding: 16px;
+      margin: 24px 0;
+      text-align: left;
+    }
+    .info-box p { margin: 0; font-size: 14px; color: #CBD5E1; }
+    .info-box strong { color: #F1F5F9; }
+    .btn {
+      display: inline-block;
+      background: #EF4444;
+      color: #fff;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 15px;
+      padding: 14px 28px;
+      border-radius: 10px;
+      margin-top: 8px;
+    }
+    .warning {
+      font-size: 13px;
+      color: #F87171;
+      margin-top: 20px;
+    }
+  </style>
+  <link rel="icon" type="image/x-icon" href="/favicon.ico?v=2" />
+  <link rel="icon" type="image/png" sizes="192x192" href="/assets/img/favicon-192.png?v=2" />
+  <link rel="apple-touch-icon" href="/assets/img/favicon-192.png?v=2" />
+</head>
+<body>
+  <div class="card">
+    <div class="icon">🗑️</div>
+    <h1>Excluir minha conta</h1>
+    <p>Ao solicitar a exclusão da sua conta Linking Go, os seguintes dados serão removidos permanentemente:</p>
+
+    <div class="info-box">
+      <p>✓ Dados do perfil (nome, e-mail)</p>
+      <p>✓ Histórico de rotas e entregas</p>
+      <p>✓ Fotos de comprovante de entrega</p>
+      <p>✓ Informações de pagamento e assinatura</p>
+      <p>✓ Vínculo com empresa</p>
+    </div>
+
+    <p>Para solicitar a exclusão, envie um e-mail a partir do endereço cadastrado na sua conta com o assunto <strong>"Excluir minha conta"</strong>.</p>
+
+    <a class="btn" href="mailto:diltoncr@gmail.com?subject=Excluir%20minha%20conta%20Linking%20Go">
+      Enviar solicitação por e-mail
+    </a>
+
+    <p class="warning">⚠️ A exclusão é irreversível. Todos os dados serão removidos em até 7 dias úteis.</p>
+  </div>
+</body>
+</html>
